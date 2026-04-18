@@ -182,9 +182,13 @@ serve(async (req) => {
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-pro",
         messages: [
-          { role: "system", content: `You are an expert industry analyst. Produce VISUAL-FIRST explainers — extremely terse copy, every field is scannable. STRICT WORD LIMITS (hard caps, no exceptions):
+          { role: "system", content: `You are an expert industry analyst. Produce VISUAL-FIRST explainers — extremely terse copy, every field is scannable.
+
+ICON RULES (CRITICAL): Every "icon" field MUST be a valid Lucide React icon name in PascalCase (e.g. "CreditCard", "Wallet", "ShieldCheck", "Users", "Building2", "Truck", "Stethoscope", "Banknote", "Globe", "Lock", "Server", "Database", "Cpu", "Smartphone", "Store", "Factory", "Plane", "Car", "BarChart3", "Sparkles", "Zap", "Target", "Workflow", "Network", "Package", "FileText", "Mail", "MessageSquare", "Search", "Settings", "AlertTriangle", "TrendingUp", "DollarSign", "ShoppingCart", "Bot", "Brain", "Cloud", "Layers", "GitBranch", "Plug", "Key", "Eye", "HeartPulse"). NEVER use emojis. NEVER use kebab-case. NEVER invent names. Pick a real Lucide icon that semantically fits the entity. Each user/persona, job, process step, architecture node, opportunity, and product MUST have a meaningful, distinct Lucide icon.
+
+STRICT WORD LIMITS (hard caps, no exceptions):
 - tagline: max 8 words
 - overview.summary: max 18 words
 - stat.value: max 3 words (prefer numbers/units like "$2.1T", "180+ countries")
