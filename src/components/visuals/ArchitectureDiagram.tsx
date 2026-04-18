@@ -62,7 +62,7 @@ export const ArchitectureDiagram = ({ layers, edges }: { layers: Layer[]; edges:
       {/* Edges */}
       {edges.length > 0 && (
         <div>
-          <h5 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">How they communicate</h5>
+          <h5 className="mb-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Flow</h5>
           <div className="grid gap-2 sm:grid-cols-2">
             {edges.map((e, i) => {
               const fromLayer = nodeLayer[e.from] ?? 0;

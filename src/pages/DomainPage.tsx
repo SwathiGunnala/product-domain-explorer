@@ -155,23 +155,23 @@ const DomainPage = () => {
               <StatTiles stats={data.overview.stats} category={category} />
             </SectionCard>
 
-            <SectionCard id="terminology" icon={<Tags className="h-4 w-4" />} title="Terminology" subtitle="The vocabulary you need">
+            <SectionCard id="terminology" icon={<Tags className="h-4 w-4" />} title="Terminology" subtitle="Key vocabulary">
               <TermChipGrid groups={data.terminology} category={category} />
             </SectionCard>
 
-            <SectionCard id="users" icon={<Users className="h-4 w-4" />} title="Users & Segments" subtitle="Who's involved and what they want">
+            <SectionCard id="users" icon={<Users className="h-4 w-4" />} title="Users" subtitle="Who's involved">
               <PersonaGrid personas={data.users} />
             </SectionCard>
 
-            <SectionCard id="jobs" icon={<Target className="h-4 w-4" />} title="Jobs to be Done" subtitle="What users hire this domain for">
+            <SectionCard id="jobs" icon={<Target className="h-4 w-4" />} title="Jobs to be Done" subtitle="Pain → Gain">
               <JtbdCardList jobs={data.jobs} />
             </SectionCard>
 
-            <SectionCard id="process" icon={<Workflow className="h-4 w-4" />} title="End-to-end Process" subtitle="How it flows from start to finish">
+            <SectionCard id="process" icon={<Workflow className="h-4 w-4" />} title="Process" subtitle="Start to finish">
               <ProcessStepper steps={data.process} category={category} />
             </SectionCard>
 
-            <SectionCard id="architecture" icon={<Network className="h-4 w-4" />} title="Architecture" subtitle="Components and how they communicate">
+            <SectionCard id="architecture" icon={<Network className="h-4 w-4" />} title="Architecture" subtitle="Layers & flows">
               <ArchitectureDiagram layers={data.architecture.layers} edges={data.architecture.edges} />
             </SectionCard>
 
@@ -179,7 +179,7 @@ const DomainPage = () => {
               <OpportunityMatrix items={data.opportunities} />
             </SectionCard>
 
-            <SectionCard id="products" icon={<Package className="h-4 w-4" />} title="Notable Products" subtitle="Tap a card to see vision, segments, revenue & what's next">
+            <SectionCard id="products" icon={<Package className="h-4 w-4" />} title="Notable Products" subtitle="Tap for deep-dive">
               <ProductGrid
                 products={data.products}
                 onSelect={(p) => navigate(`/domain/${slug}/product/${encodeURIComponent(p.name)}?company=${encodeURIComponent(p.company)}`)}

@@ -92,7 +92,15 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: "You are a product strategist. Produce sharp, factual deep-dives on real products and companies. Use rough public estimates where exact figures aren't available; flag them as approximate." },
+          { role: "system", content: `You are a product strategist. Produce VISUAL-FIRST deep-dives — terse copy only, every field is scannable. STRICT WORD LIMITS (hard caps):
+- vision.statement: max 15 words
+- vision.why: max 12 words
+- segment.name: max 4 words; segment.need: max 8 words
+- revenue.scale: max 8 words (e.g. "$10B annual (2024)")
+- stream.name: max 3 words; stream.description: max 8 words
+- whatsNext.past / now / next: max 12 words each
+- threats / opportunities items: max 8 words each
+No filler, no marketing fluff. Use rough public estimates; flag with "~" if approximate. Shares should sum to ~100.` },
           { role: "user", content: `Deep-dive on the product "${product}"${company ? ` by ${company}` : ""}${domain ? ` in the ${domain} domain` : ""}. Be specific.` },
         ],
         tools: [tool],
