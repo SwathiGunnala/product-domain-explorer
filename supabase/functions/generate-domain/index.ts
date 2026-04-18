@@ -14,39 +14,36 @@ const tool = {
     parameters: {
       type: "object",
       properties: {
-        tagline: { type: "string", description: "1-line poetic tagline for the domain." },
+        tagline: { type: "string" },
         overview: {
           type: "object",
           properties: {
-            summary: { type: "string", description: "2-3 sentence plain-English overview." },
+            summary: { type: "string" },
             stats: {
               type: "array",
-              minItems: 4, maxItems: 4,
               items: {
                 type: "object",
                 properties: {
                   label: { type: "string" },
-                  value: { type: "string", description: "Short value/figure (e.g. '$2.5T', '~5B users')" },
-                  hint: { type: "string", description: "1 line context" },
-                  icon: { type: "string", description: "Lucide icon hint (e.g. 'Globe', 'Users', 'TrendingUp')" },
+                  value: { type: "string" },
+                  hint: { type: "string" },
+                  icon: { type: "string" },
                 },
                 required: ["label", "value", "hint", "icon"],
-                additionalProperties: false,
               },
             },
           },
           required: ["summary", "stats"],
-          additionalProperties: false,
         },
         terminology: {
-          type: "array", minItems: 4, maxItems: 6,
+          type: "array",
           items: {
             type: "object",
             properties: {
               group: { type: "string" },
               groupIcon: { type: "string" },
               terms: {
-                type: "array", minItems: 2, maxItems: 6,
+                type: "array",
                 items: {
                   type: "object",
                   properties: {
@@ -55,44 +52,40 @@ const tool = {
                     icon: { type: "string" },
                   },
                   required: ["term", "definition", "icon"],
-                  additionalProperties: false,
                 },
               },
             },
             required: ["group", "groupIcon", "terms"],
-            additionalProperties: false,
           },
         },
         users: {
-          type: "array", minItems: 4, maxItems: 8,
+          type: "array",
           items: {
             type: "object",
             properties: {
               role: { type: "string" },
-              side: { type: "string", enum: ["supply", "demand", "enabler", "regulator"] },
+              side: { type: "string", description: "one of: supply, demand, enabler, regulator" },
               goal: { type: "string" },
               icon: { type: "string" },
             },
             required: ["role", "side", "goal", "icon"],
-            additionalProperties: false,
           },
         },
         jobs: {
-          type: "array", minItems: 4, maxItems: 6,
+          type: "array",
           items: {
             type: "object",
             properties: {
-              title: { type: "string", description: "When I'm doing X..." },
+              title: { type: "string" },
               pain: { type: "string" },
               gain: { type: "string" },
               icon: { type: "string" },
             },
             required: ["title", "pain", "gain", "icon"],
-            additionalProperties: false,
           },
         },
         process: {
-          type: "array", minItems: 4, maxItems: 7,
+          type: "array",
           items: {
             type: "object",
             properties: {
@@ -101,86 +94,78 @@ const tool = {
               icon: { type: "string" },
             },
             required: ["title", "description", "icon"],
-            additionalProperties: false,
           },
         },
         architecture: {
           type: "object",
           properties: {
             layers: {
-              type: "array", minItems: 3, maxItems: 4,
+              type: "array",
               items: {
                 type: "object",
                 properties: {
-                  name: { type: "string", description: "e.g. 'Frontend', 'Service', 'Data', 'External'" },
+                  name: { type: "string" },
                   nodes: {
-                    type: "array", minItems: 2, maxItems: 5,
+                    type: "array",
                     items: {
                       type: "object",
                       properties: {
-                        id: { type: "string", description: "kebab id, unique" },
+                        id: { type: "string" },
                         label: { type: "string" },
                         icon: { type: "string" },
                       },
                       required: ["id", "label", "icon"],
-                      additionalProperties: false,
                     },
                   },
                 },
                 required: ["name", "nodes"],
-                additionalProperties: false,
               },
             },
             edges: {
-              type: "array", minItems: 3, maxItems: 10,
+              type: "array",
               items: {
                 type: "object",
                 properties: {
                   from: { type: "string" },
                   to: { type: "string" },
-                  label: { type: "string", description: "what flows" },
+                  label: { type: "string" },
                 },
                 required: ["from", "to", "label"],
-                additionalProperties: false,
               },
             },
           },
           required: ["layers", "edges"],
-          additionalProperties: false,
         },
         opportunities: {
-          type: "array", minItems: 4, maxItems: 6,
+          type: "array",
           items: {
             type: "object",
             properties: {
               title: { type: "string" },
               description: { type: "string" },
-              impact: { type: "integer", minimum: 1, maximum: 5 },
-              feasibility: { type: "integer", minimum: 1, maximum: 5 },
+              impact: { type: "integer" },
+              feasibility: { type: "integer" },
               icon: { type: "string" },
             },
             required: ["title", "description", "impact", "feasibility", "icon"],
-            additionalProperties: false,
           },
         },
         products: {
-          type: "array", minItems: 6, maxItems: 8,
+          type: "array",
           items: {
             type: "object",
             properties: {
               name: { type: "string" },
               company: { type: "string" },
-              tagline: { type: "string", description: "1-line description" },
-              category: { type: "string", enum: ["Incumbent", "Challenger", "Infrastructure", "Niche"] },
+              tagline: { type: "string" },
+              category: { type: "string", description: "one of: Incumbent, Challenger, Infrastructure, Niche" },
               icon: { type: "string" },
             },
             required: ["name", "company", "tagline", "category", "icon"],
-            additionalProperties: false,
           },
         },
       },
       required: ["tagline", "overview", "terminology", "users", "jobs", "process", "architecture", "opportunities", "products"],
-      additionalProperties: false,
     },
   },
 };
