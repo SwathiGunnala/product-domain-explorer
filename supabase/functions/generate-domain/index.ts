@@ -129,8 +129,9 @@ const tool = {
                   from: { type: "string" },
                   to: { type: "string" },
                   label: { type: "string" },
+                  kind: { type: "string", description: "one of: forward, return" },
                 },
-                required: ["from", "to", "label"],
+                required: ["from", "to", "label", "kind"],
               },
             },
           },
@@ -198,7 +199,8 @@ STRICT WORD LIMITS (hard caps, no exceptions):
 - user.goal: max 8 words
 - job.title: max 5 words; job.pain: max 10 words; job.gain: max 10 words
 - process.title: max 4 words; process.description: max 10 words
-- architecture node.label: max 4 words; edge.label: max 4 words
+- architecture node.label: max 3 words (very short — fits under a circular icon); edge.label: max 3 words
+- architecture edge.kind: "forward" for primary request/data flow, "return" for response/reporting/settlement loops
 - opportunity.title: max 5 words; opportunity.description: max 12 words
 - product.tagline: max 10 words
 No filler, no marketing fluff, no full sentences where a phrase works. Use real product/company names.
