@@ -132,7 +132,17 @@ export const ArchitectureDiagram = ({ layers, edges }: { layers: Layer[]; edges:
         >
           <defs>
             {LAYER_COLORS.map((c, i) => (
-              <marker key={i} id={`arrow-${i}`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <marker
+                key={i}
+                id={`arrow-${i}`}
+                viewBox="0 0 10 10"
+                refX="8"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto"
+                markerUnits="userSpaceOnUse"
+              >
                 <path d="M 0 0 L 10 5 L 0 10 z" fill={c.stroke} />
               </marker>
             ))}
@@ -143,34 +153,44 @@ export const ArchitectureDiagram = ({ layers, edges }: { layers: Layer[]; edges:
             if (!a || !b) return null;
             const c = LAYER_COLORS[(a.layer) % LAYER_COLORS.length];
             const { path, mx, my } = buildPath(a, b);
-            const labelW = Math.max(28, e.label.length * 6 + 12);
+            const labelW = Math.max(28, (e.label?.length || 0) * 6 + 14);
+            const markerId = `arrow-${a.layer % LAYER_COLORS.length}`;
             return (
               <g key={i} className="animate-fade-in">
+                {/* Dashed line (no marker — dashes break marker rendering in some browsers) */}
                 <path
                   d={path}
                   fill="none"
                   stroke={c.stroke}
                   strokeWidth={1.75}
-                  strokeOpacity={0.85}
-                  strokeDasharray="4 3"
-                  markerEnd={`url(#arrow-${a.layer % LAYER_COLORS.length})`}
+                  strokeOpacity={0.7}
+                  strokeDasharray="5 4"
+                />
+                {/* Solid invisible overlay just to attach the arrowhead cleanly */}
+                <path
+                  d={path}
+                  fill="none"
+                  stroke="transparent"
+                  strokeWidth={1}
+                  markerEnd={`url(#${markerId})`}
                 />
                 {e.label && (
-                  <g transform={`translate(${mx - labelW / 2}, ${my - 9})`}>
+                  <g transform={`translate(${mx - labelW / 2}, ${my - 10})`}>
                     <rect
                       width={labelW}
-                      height={18}
-                      rx={9}
+                      height={20}
+                      rx={10}
                       fill="hsl(var(--card))"
                       stroke={c.stroke}
-                      strokeOpacity={0.4}
+                      strokeOpacity={0.5}
+                      strokeWidth={1}
                     />
                     <text
                       x={labelW / 2}
-                      y={12}
+                      y={13}
                       textAnchor="middle"
                       fontSize={10}
-                      fontWeight={600}
+                      fontWeight={700}
                       fill={c.stroke}
                     >
                       {e.label}
