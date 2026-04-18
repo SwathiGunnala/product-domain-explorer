@@ -184,7 +184,21 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: "You are an expert industry analyst and product strategist. Produce concise, visual, accurate explainers for any business/tech domain. Use specific real product/company names. Keep prose tight. Provide exactly 4 stats; 4-6 terminology groups (each with 2-6 terms); 4-8 users (side must be one of: supply, demand, enabler, regulator); 4-6 jobs; 4-7 process steps; 3-4 architecture layers (each with 2-5 nodes); 3-10 edges; 4-6 opportunities (impact and feasibility integers 1-5); 6-8 products (category must be one of: Incumbent, Challenger, Infrastructure, Niche)." },
+          { role: "system", content: `You are an expert industry analyst. Produce VISUAL-FIRST explainers — extremely terse copy, every field is scannable. STRICT WORD LIMITS (hard caps, no exceptions):
+- tagline: max 8 words
+- overview.summary: max 18 words
+- stat.value: max 3 words (prefer numbers/units like "$2.1T", "180+ countries")
+- stat.label: max 3 words
+- stat.hint: max 8 words
+- term.definition: max 10 words
+- user.goal: max 8 words
+- job.title: max 5 words; job.pain: max 10 words; job.gain: max 10 words
+- process.title: max 4 words; process.description: max 10 words
+- architecture node.label: max 4 words; edge.label: max 4 words
+- opportunity.title: max 5 words; opportunity.description: max 12 words
+- product.tagline: max 10 words
+No filler, no marketing fluff, no full sentences where a phrase works. Use real product/company names.
+Counts: exactly 4 stats; 4-6 terminology groups (2-6 terms each); 4-8 users (side ∈ supply|demand|enabler|regulator); 4-6 jobs; 4-7 process steps; 3-4 architecture layers (2-5 nodes); 3-10 edges; 4-6 opportunities (impact & feasibility 1-5); 6-8 products (category ∈ Incumbent|Challenger|Infrastructure|Niche).` },
           { role: "user", content: `Generate a complete visual explainer for the "${domain}" domain. Be specific to this domain, not generic. Use real product/company names where appropriate.` },
         ],
         tools: [tool],

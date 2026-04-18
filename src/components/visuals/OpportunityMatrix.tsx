@@ -11,10 +11,10 @@ export const OpportunityMatrix = ({ items }: { items: Op[] }) => {
         <div className="absolute inset-x-4 top-1/2 h-px bg-border" />
         <div className="absolute inset-y-4 left-1/2 w-px bg-border" />
         {/* Quadrant labels */}
-        <div className="absolute left-4 top-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">High Impact · Low Feasibility</div>
+        <div className="absolute left-4 top-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Big Bets</div>
         <div className="absolute right-4 top-2 text-right text-[10px] font-bold uppercase tracking-wide text-cat-finance">★ Quick Wins</div>
-        <div className="absolute bottom-2 left-4 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Low Impact · Low Feasibility</div>
-        <div className="absolute bottom-2 right-4 text-right text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Low Impact · High Feasibility</div>
+        <div className="absolute bottom-2 left-4 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Skip</div>
+        <div className="absolute bottom-2 right-4 text-right text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Fill-ins</div>
         {/* Axis titles */}
         <div className="absolute -left-1 top-1/2 -translate-y-1/2 -rotate-90 text-[10px] font-semibold uppercase text-muted-foreground">Impact →</div>
         <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-semibold uppercase text-muted-foreground">Feasibility →</div>
