@@ -121,21 +121,23 @@ const tool = {
                 required: ["name", "nodes"],
               },
             },
-            edges: {
+            flow: {
               type: "array",
+              description: "Ordered sequence of interactions showing how the system works step-by-step.",
               items: {
                 type: "object",
                 properties: {
-                  from: { type: "string" },
-                  to: { type: "string" },
-                  label: { type: "string" },
+                  step: { type: "integer", description: "1-based step number" },
+                  from: { type: "string", description: "node id of the actor initiating this step" },
+                  to: { type: "string", description: "node id of the receiver" },
+                  action: { type: "string", description: "what happens at this step (verb phrase, max 6 words)" },
                   kind: { type: "string", description: "one of: forward, return" },
                 },
-                required: ["from", "to", "label", "kind"],
+                required: ["step", "from", "to", "action", "kind"],
               },
             },
           },
-          required: ["layers", "edges"],
+          required: ["layers", "flow"],
         },
         opportunities: {
           type: "array",
@@ -199,12 +201,12 @@ STRICT WORD LIMITS (hard caps, no exceptions):
 - user.goal: max 8 words
 - job.title: max 5 words; job.pain: max 10 words; job.gain: max 10 words
 - process.title: max 4 words; process.description: max 10 words
-- architecture node.label: max 3 words (very short — fits under a circular icon); edge.label: max 3 words
-- architecture edge.kind: "forward" for primary request/data flow, "return" for response/reporting/settlement loops
+- architecture node.label: max 3 words; flow.action: max 6 words (verb phrase like "Sends auth request")
+- architecture.flow: 6-10 ordered steps representing one complete end-to-end interaction. Steps must reference real node ids. Use kind="return" for response/settlement/reporting steps that flow back.
 - opportunity.title: max 5 words; opportunity.description: max 12 words
 - product.tagline: max 10 words
 No filler, no marketing fluff, no full sentences where a phrase works. Use real product/company names.
-Counts: exactly 4 stats; 4-6 terminology groups (2-6 terms each); 4-8 users (side ∈ supply|demand|enabler|regulator); 4-6 jobs; 4-7 process steps; 3-4 architecture layers (2-5 nodes); 3-10 edges; 4-6 opportunities (impact & feasibility 1-5); 6-8 products (category ∈ Incumbent|Challenger|Infrastructure|Niche).` },
+Counts: exactly 4 stats; 4-6 terminology groups (2-6 terms each); 4-8 users (side ∈ supply|demand|enabler|regulator); 4-6 jobs; 4-7 process steps; 3-4 architecture layers (2-4 nodes); 6-10 flow steps; 4-6 opportunities (impact & feasibility 1-5); 6-8 products (category ∈ Incumbent|Challenger|Infrastructure|Niche).` },
           { role: "user", content: `Generate a complete visual explainer for the "${domain}" domain. Be specific to this domain, not generic. Use real product/company names where appropriate.` },
         ],
         tools: [tool],

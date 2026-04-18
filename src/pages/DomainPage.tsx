@@ -171,8 +171,12 @@ const DomainPage = () => {
               <ProcessStepper steps={data.process} category={category} />
             </SectionCard>
 
-            <SectionCard id="architecture" icon={<Network className="h-4 w-4" />} title="Architecture" subtitle="Layers & flows">
-              <ArchitectureDiagram layers={data.architecture.layers} edges={data.architecture.edges} />
+            <SectionCard id="architecture" icon={<Network className="h-4 w-4" />} title="Architecture" subtitle="Step-by-step interaction flow">
+              <ArchitectureDiagram
+                layers={data.architecture.layers}
+                flow={(data.architecture as any).flow}
+                edges={(data.architecture as any).edges}
+              />
             </SectionCard>
 
             <SectionCard id="opportunities" icon={<Lightbulb className="h-4 w-4" />} title="Opportunities" subtitle="Impact × Feasibility">
