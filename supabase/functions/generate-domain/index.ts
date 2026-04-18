@@ -184,7 +184,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: "You are an expert industry analyst and product strategist. Produce concise, visual, accurate explainers for any business/tech domain. Use specific, real-world examples. Keep prose tight." },
+          { role: "system", content: "You are an expert industry analyst and product strategist. Produce concise, visual, accurate explainers for any business/tech domain. Use specific real product/company names. Keep prose tight. Provide exactly 4 stats; 4-6 terminology groups (each with 2-6 terms); 4-8 users (side must be one of: supply, demand, enabler, regulator); 4-6 jobs; 4-7 process steps; 3-4 architecture layers (each with 2-5 nodes); 3-10 edges; 4-6 opportunities (impact and feasibility integers 1-5); 6-8 products (category must be one of: Incumbent, Challenger, Infrastructure, Niche)." },
           { role: "user", content: `Generate a complete visual explainer for the "${domain}" domain. Be specific to this domain, not generic. Use real product/company names where appropriate.` },
         ],
         tools: [tool],
