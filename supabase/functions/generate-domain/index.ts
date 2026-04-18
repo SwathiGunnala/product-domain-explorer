@@ -206,7 +206,7 @@ STRICT WORD LIMITS (hard caps, no exceptions):
 - opportunity.title: max 5 words; opportunity.description: max 12 words
 - product.tagline: max 10 words
 No filler, no marketing fluff, no full sentences where a phrase works. Use real product/company names.
-Counts: exactly 4 stats; 4-6 terminology groups (2-6 terms each); 4-8 users (side ∈ supply|demand|enabler|regulator); 4-6 jobs; 4-7 process steps; 3-4 architecture layers (2-5 nodes); 3-10 edges; 4-6 opportunities (impact & feasibility 1-5); 6-8 products (category ∈ Incumbent|Challenger|Infrastructure|Niche).` },
+Counts: exactly 4 stats; 4-6 terminology groups (2-6 terms each); 4-8 users (side ∈ supply|demand|enabler|regulator); 4-6 jobs; 4-7 process steps; 3-4 architecture layers (2-4 nodes); 6-10 flow steps; 4-6 opportunities (impact & feasibility 1-5); 6-8 products (category ∈ Incumbent|Challenger|Infrastructure|Niche).` },
           { role: "user", content: `Generate a complete visual explainer for the "${domain}" domain. Be specific to this domain, not generic. Use real product/company names where appropriate.` },
         ],
         tools: [tool],
