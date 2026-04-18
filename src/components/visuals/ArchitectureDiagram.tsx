@@ -4,16 +4,16 @@ import { cn } from "@/lib/utils";
 
 interface Node { id: string; label: string; icon: string }
 interface Layer { name: string; nodes: Node[] }
-interface Edge { from: string; to: string; label: string }
+interface Edge { from: string; to: string; label: string; kind?: "forward" | "return" }
 
 const LAYER_COLORS = [
-  { dot: "bg-cat-mobility", bg: "bg-cat-mobility-soft", text: "text-cat-mobility", border: "border-cat-mobility/40", stroke: "hsl(var(--cat-mobility))" },
-  { dot: "bg-cat-tech", bg: "bg-cat-tech-soft", text: "text-cat-tech", border: "border-cat-tech/40", stroke: "hsl(var(--cat-tech))" },
-  { dot: "bg-cat-finance", bg: "bg-cat-finance-soft", text: "text-cat-finance", border: "border-cat-finance/40", stroke: "hsl(var(--cat-finance))" },
-  { dot: "bg-cat-commerce", bg: "bg-cat-commerce-soft", text: "text-cat-commerce", border: "border-cat-commerce/40", stroke: "hsl(var(--cat-commerce))" },
+  { dot: "bg-cat-mobility", bg: "bg-cat-mobility-soft", text: "text-cat-mobility", border: "border-cat-mobility/40", ring: "ring-cat-mobility/30", stroke: "hsl(var(--cat-mobility))" },
+  { dot: "bg-cat-tech", bg: "bg-cat-tech-soft", text: "text-cat-tech", border: "border-cat-tech/40", ring: "ring-cat-tech/30", stroke: "hsl(var(--cat-tech))" },
+  { dot: "bg-cat-finance", bg: "bg-cat-finance-soft", text: "text-cat-finance", border: "border-cat-finance/40", ring: "ring-cat-finance/30", stroke: "hsl(var(--cat-finance))" },
+  { dot: "bg-cat-commerce", bg: "bg-cat-commerce-soft", text: "text-cat-commerce", border: "border-cat-commerce/40", ring: "ring-cat-commerce/30", stroke: "hsl(var(--cat-commerce))" },
 ];
 
-interface Rect { x: number; y: number; w: number; h: number; layer: number }
+interface Rect { cx: number; cy: number; r: number; layer: number }
 
 export const ArchitectureDiagram = ({ layers, edges }: { layers: Layer[]; edges: Edge[] }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -33,10 +33,9 @@ export const ArchitectureDiagram = ({ layers, edges }: { layers: Layer[]; edges:
       if (!el) return;
       const r = el.getBoundingClientRect();
       next[id] = {
-        x: r.left - cb.left,
-        y: r.top - cb.top,
-        w: r.width,
-        h: r.height,
+        cx: r.left - cb.left + r.width / 2,
+        cy: r.top - cb.top + r.height / 2,
+        r: Math.min(r.width, r.height) / 2,
         layer: nodeLayer[id] ?? 0,
       };
     });
@@ -59,57 +58,56 @@ export const ArchitectureDiagram = ({ layers, edges }: { layers: Layer[]; edges:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layers]);
 
-  // Compute a routed path between two node rects, avoiding overlap with the source/target
-  const buildPath = (a: Rect, b: Rect) => {
-    const ax = a.x + a.w / 2;
-    const ay = a.y + a.h / 2;
-    const bx = b.x + b.w / 2;
-    const by = b.y + b.h / 2;
-    const dx = bx - ax;
-    const dy = by - ay;
-    const sameLayer = a.layer === b.layer;
+  // Build a horizontal arc/line path between two circles, ending at the circle's edge (not center)
+  // arcSign: -1 = bow upward (above), +1 = bow downward (below), 0 = straight curve
+  const buildPath = (a: Rect, b: Rect, arcSign: number) => {
+    const dx = b.cx - a.cx;
+    const dy = b.cy - a.cy;
+    const dist = Math.hypot(dx, dy) || 1;
+    const ux = dx / dist;
+    const uy = dy / dist;
+    // Start/end on circle boundary with small gap for arrowhead
+    const gap = 8;
+    const sx = a.cx + ux * (a.r + 2);
+    const sy = a.cy + uy * (a.r + 2);
+    const tx = b.cx - ux * (b.r + gap);
+    const ty = b.cy - uy * (b.r + gap);
 
-    // Pick anchor sides
-    let sx: number, sy: number, tx: number, ty: number, c1x: number, c1y: number, c2x: number, c2y: number;
-    if (sameLayer) {
-      // side-to-side, bow outward (downward) to avoid overlap
-      if (dx >= 0) {
-        sx = a.x + a.w; sy = ay;
-        tx = b.x; ty = by;
-      } else {
-        sx = a.x; sy = ay;
-        tx = b.x + b.w; ty = by;
-      }
-      const midX = (sx + tx) / 2;
-      const bow = Math.min(60, Math.abs(tx - sx) * 0.4 + 20);
-      c1x = midX; c1y = sy + bow;
-      c2x = midX; c2y = ty + bow;
-    } else {
-      // top-to-bottom (or vice versa)
-      if (dy >= 0) {
-        sx = ax; sy = a.y + a.h;
-        tx = bx; ty = b.y;
-      } else {
-        sx = ax; sy = a.y;
-        tx = bx; ty = b.y + b.h;
-      }
-      const midY = (sy + ty) / 2;
-      c1x = sx; c1y = midY;
-      c2x = tx; c2y = midY;
-    }
-    const path = `M ${sx},${sy} C ${c1x},${c1y} ${c2x},${c2y} ${tx},${ty}`;
-    // Approximate midpoint for label (cubic at t=0.5)
-    const mx = 0.125 * sx + 0.375 * c1x + 0.375 * c2x + 0.125 * tx;
-    const my = 0.125 * sy + 0.375 * c1y + 0.375 * c2y + 0.125 * ty;
-    return { path, mx, my };
+    // Control point perpendicular to direction
+    const mx = (sx + tx) / 2;
+    const my = (sy + ty) / 2;
+    const perpX = -uy;
+    const perpY = ux;
+    // Arc magnitude scales with distance; bigger for "return" (long arcs over the top)
+    const magnitude = arcSign === 0 ? 0 : Math.min(140, dist * 0.25 + 30) * Math.abs(arcSign);
+    const sign = arcSign >= 0 ? 1 : -1;
+    const cx = mx + perpX * magnitude * sign;
+    const cy = my + perpY * magnitude * sign;
+
+    const path = `M ${sx},${sy} Q ${cx},${cy} ${tx},${ty}`;
+    // Quadratic midpoint at t=0.5
+    const lx = 0.25 * sx + 0.5 * cx + 0.25 * tx;
+    const ly = 0.25 * sy + 0.5 * cy + 0.25 * ty;
+    return { path, lx, ly };
   };
 
   const ready = Object.keys(rects).length > 0 && size.w > 0;
 
+  // Decide arc direction per edge to reduce overlap:
+  // - return edges always bow upward (over the top) — like the reference's "Settlement details in a batch"
+  // - forward edges between adjacent layers: straight
+  // - forward edges skipping layers: bow downward
+  const getArcSign = (e: Edge, a: Rect, b: Rect) => {
+    const layerSpan = Math.abs(b.layer - a.layer);
+    if (e.kind === "return") return -1.2;
+    if (layerSpan >= 2) return 0.8;
+    return 0;
+  };
+
   return (
     <div className="space-y-4">
       {/* Legend */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {layers.map((l, i) => {
           const c = LAYER_COLORS[i % LAYER_COLORS.length];
           return (
@@ -119,10 +117,20 @@ export const ArchitectureDiagram = ({ layers, edges }: { layers: Layer[]; edges:
             </div>
           );
         })}
+        <div className="ml-auto flex items-center gap-3 text-[11px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <svg width="22" height="6"><line x1="0" y1="3" x2="22" y2="3" stroke="currentColor" strokeWidth="1.5" /></svg>
+            Forward
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <svg width="22" height="6"><line x1="0" y1="3" x2="22" y2="3" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3" /></svg>
+            Return
+          </span>
+        </div>
       </div>
 
-      {/* Diagram canvas */}
-      <div ref={containerRef} className="relative rounded-xl border bg-gradient-subtle p-4">
+      {/* Diagram canvas — horizontal columns, one per layer */}
+      <div ref={containerRef} className="relative overflow-x-auto rounded-xl border bg-gradient-subtle p-6 md:p-10">
         {/* SVG arrow layer */}
         <svg
           className="pointer-events-none absolute inset-0 h-full w-full"
@@ -134,12 +142,12 @@ export const ArchitectureDiagram = ({ layers, edges }: { layers: Layer[]; edges:
             {LAYER_COLORS.map((c, i) => (
               <marker
                 key={i}
-                id={`arrow-${i}`}
+                id={`arch-arrow-${i}`}
                 viewBox="0 0 10 10"
                 refX="8"
                 refY="5"
-                markerWidth="6"
-                markerHeight="6"
+                markerWidth="7"
+                markerHeight="7"
                 orient="auto"
                 markerUnits="userSpaceOnUse"
               >
@@ -151,47 +159,43 @@ export const ArchitectureDiagram = ({ layers, edges }: { layers: Layer[]; edges:
             const a = rects[e.from];
             const b = rects[e.to];
             if (!a || !b) return null;
-            const c = LAYER_COLORS[(a.layer) % LAYER_COLORS.length];
-            const { path, mx, my } = buildPath(a, b);
-            const labelW = Math.max(28, (e.label?.length || 0) * 6 + 14);
-            const markerId = `arrow-${a.layer % LAYER_COLORS.length}`;
+            const c = LAYER_COLORS[a.layer % LAYER_COLORS.length];
+            const arcSign = getArcSign(e, a, b);
+            const { path, lx, ly } = buildPath(a, b, arcSign);
+            const isReturn = e.kind === "return";
+            const markerId = `arch-arrow-${a.layer % LAYER_COLORS.length}`;
+            const labelW = Math.max(28, (e.label?.length || 0) * 6.2 + 10);
             return (
               <g key={i} className="animate-fade-in">
-                {/* Dashed line (no marker — dashes break marker rendering in some browsers) */}
                 <path
                   d={path}
                   fill="none"
                   stroke={c.stroke}
                   strokeWidth={1.75}
-                  strokeOpacity={0.7}
-                  strokeDasharray="5 4"
-                />
-                {/* Solid invisible overlay just to attach the arrowhead cleanly */}
-                <path
-                  d={path}
-                  fill="none"
-                  stroke="transparent"
-                  strokeWidth={1}
+                  strokeOpacity={isReturn ? 0.75 : 0.9}
+                  strokeDasharray={isReturn ? "5 4" : undefined}
                   markerEnd={`url(#${markerId})`}
                 />
                 {e.label && (
-                  <g transform={`translate(${mx - labelW / 2}, ${my - 10})`}>
+                  <g transform={`translate(${lx}, ${ly})`}>
+                    {/* subtle background plate so label stays legible over gradient */}
                     <rect
+                      x={-labelW / 2}
+                      y={-9}
                       width={labelW}
-                      height={20}
-                      rx={10}
+                      height={18}
+                      rx={4}
                       fill="hsl(var(--card))"
-                      stroke={c.stroke}
-                      strokeOpacity={0.5}
-                      strokeWidth={1}
+                      fillOpacity={0.85}
                     />
                     <text
-                      x={labelW / 2}
-                      y={13}
+                      x={0}
+                      y={4}
                       textAnchor="middle"
-                      fontSize={10}
-                      fontWeight={700}
+                      fontSize={10.5}
+                      fontWeight={600}
                       fill={c.stroke}
+                      style={{ letterSpacing: "0.01em" }}
                     >
                       {e.label}
                     </text>
@@ -202,29 +206,39 @@ export const ArchitectureDiagram = ({ layers, edges }: { layers: Layer[]; edges:
           })}
         </svg>
 
-        {/* Layer boxes (above SVG via z-index) */}
-        <div className="relative z-10 space-y-5">
+        {/* Node columns (above SVG) */}
+        <div
+          className="relative z-10 grid items-center gap-x-8 gap-y-6 md:gap-x-14"
+          style={{ gridTemplateColumns: `repeat(${layers.length}, minmax(120px, 1fr))` }}
+        >
           {layers.map((l, li) => {
             const c = LAYER_COLORS[li % LAYER_COLORS.length];
             return (
-              <div key={li} className={cn("rounded-xl border-2 border-dashed bg-card/60 p-3 backdrop-blur-sm", c.border)}>
-                <div className={cn("mb-3 inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide", c.bg, c.text)}>
-                  <span className={cn("h-1.5 w-1.5 rounded-full", c.dot)} />
+              <div key={li} className="flex flex-col items-center gap-6">
+                {/* Layer name header */}
+                <div className={cn("rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider", c.bg, c.text)}>
                   {l.name}
                 </div>
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                {/* Circular nodes stacked */}
+                <div className="flex w-full flex-col items-center gap-7">
                   {l.nodes.map((n) => {
                     const Icon = getIcon(n.icon);
                     return (
-                      <div
-                        key={n.id}
-                        ref={(el) => { nodeRefs.current[n.id] = el; }}
-                        className={cn("flex items-center gap-2 rounded-lg border bg-card p-2.5 shadow-card", c.border)}
-                      >
-                        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", c.bg)}>
-                          <Icon className={cn("h-4 w-4", c.text)} />
+                      <div key={n.id} className="flex flex-col items-center gap-2">
+                        <div
+                          ref={(el) => { nodeRefs.current[n.id] = el; }}
+                          className={cn(
+                            "flex h-16 w-16 items-center justify-center rounded-full bg-card shadow-tile ring-4 transition-smooth hover:scale-105 md:h-20 md:w-20",
+                            c.ring,
+                          )}
+                        >
+                          <div className={cn("flex h-10 w-10 items-center justify-center rounded-full md:h-12 md:w-12", c.bg)}>
+                            <Icon className={cn("h-5 w-5 md:h-6 md:w-6", c.text)} strokeWidth={2.2} />
+                          </div>
                         </div>
-                        <div className="min-w-0 text-xs font-semibold leading-tight">{n.label}</div>
+                        <div className="max-w-[110px] text-center text-xs font-semibold leading-tight">
+                          {n.label}
+                        </div>
                       </div>
                     );
                   })}
