@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useLayoutEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getIcon } from "@/lib/iconMap";
 import { cn } from "@/lib/utils";
 
@@ -13,96 +13,139 @@ const LAYER_COLORS = [
   { dot: "bg-cat-commerce", bg: "bg-cat-commerce-soft", text: "text-cat-commerce", border: "border-cat-commerce/40", ring: "ring-cat-commerce/30", stroke: "hsl(var(--cat-commerce))" },
 ];
 
-interface Rect { cx: number; cy: number; r: number; layer: number }
+interface NodePos { id: string; cx: number; cy: number; r: number; layer: number; node: Node }
+
+const NODE_R = 32;          // visual circle radius
+const NODE_HIT_R = 44;      // includes ring padding for arrow gap
+const ROW_HEIGHT = 150;     // vertical spacing between nodes within a column
+const COL_MIN_WIDTH = 170;
+const TOP_PADDING = 56;     // room for layer header
+const BOTTOM_PADDING = 24;
+const SIDE_PADDING = 32;
 
 export const ArchitectureDiagram = ({ layers, edges }: { layers: Layer[]; edges: Edge[] }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const nodeRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [rects, setRects] = useState<Record<string, Rect>>({});
-  const [size, setSize] = useState({ w: 0, h: 0 });
-
-  const nodeLayer: Record<string, number> = {};
-  layers.forEach((l, li) => l.nodes.forEach(n => { nodeLayer[n.id] = li; }));
-
-  const measure = () => {
-    const container = containerRef.current;
-    if (!container) return;
-    const cb = container.getBoundingClientRect();
-    const next: Record<string, Rect> = {};
-    Object.entries(nodeRefs.current).forEach(([id, el]) => {
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      next[id] = {
-        cx: r.left - cb.left + r.width / 2,
-        cy: r.top - cb.top + r.height / 2,
-        r: Math.min(r.width, r.height) / 2,
-        layer: nodeLayer[id] ?? 0,
-      };
-    });
-    setRects(next);
-    setSize({ w: cb.width, h: cb.height });
-  };
-
-  useLayoutEffect(() => {
-    measure();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layers]);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [containerW, setContainerW] = useState(0);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-    const ro = new ResizeObserver(() => measure());
-    ro.observe(containerRef.current);
-    Object.values(nodeRefs.current).forEach(el => el && ro.observe(el));
-    window.addEventListener("resize", measure);
-    return () => { ro.disconnect(); window.removeEventListener("resize", measure); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layers]);
+    if (!wrapperRef.current) return;
+    const ro = new ResizeObserver(() => {
+      if (wrapperRef.current) setContainerW(wrapperRef.current.clientWidth);
+    });
+    ro.observe(wrapperRef.current);
+    setContainerW(wrapperRef.current.clientWidth);
+    return () => ro.disconnect();
+  }, []);
 
-  // Build a horizontal arc/line path between two circles, ending at the circle's edge (not center)
-  // arcSign: -1 = bow upward (above), +1 = bow downward (below), 0 = straight curve
-  const buildPath = (a: Rect, b: Rect, arcSign: number) => {
+  // Layout: equal-height columns. Compute every node's (cx, cy) ourselves so columns can't overlap.
+  const maxNodes = Math.max(1, ...layers.map(l => l.nodes.length));
+  const canvasH = TOP_PADDING + BOTTOM_PADDING + maxNodes * ROW_HEIGHT;
+  const canvasW = Math.max(containerW, layers.length * COL_MIN_WIDTH + SIDE_PADDING * 2);
+  const colWidth = (canvasW - SIDE_PADDING * 2) / Math.max(1, layers.length);
+
+  const positions: Record<string, NodePos> = {};
+  layers.forEach((layer, li) => {
+    const cx = SIDE_PADDING + colWidth * li + colWidth / 2;
+    const n = layer.nodes.length;
+    // Center the column's nodes vertically inside available rows
+    const usableH = canvasH - TOP_PADDING - BOTTOM_PADDING;
+    const step = n > 1 ? usableH / (n) : 0;
+    const startY = n > 1 ? TOP_PADDING + step / 2 : TOP_PADDING + usableH / 2;
+    layer.nodes.forEach((node, ni) => {
+      const cy = n > 1 ? startY + step * ni : startY;
+      positions[node.id] = { id: node.id, cx, cy, r: NODE_HIT_R, layer: li, node };
+    });
+  });
+
+  // Path builder — returns multiple sample points so we can dodge labels along the curve
+  const buildPath = (a: NodePos, b: NodePos, arcSign: number) => {
     const dx = b.cx - a.cx;
     const dy = b.cy - a.cy;
     const dist = Math.hypot(dx, dy) || 1;
     const ux = dx / dist;
     const uy = dy / dist;
-    // Start/end on circle boundary with small gap for arrowhead
     const gap = 8;
     const sx = a.cx + ux * (a.r + 2);
     const sy = a.cy + uy * (a.r + 2);
     const tx = b.cx - ux * (b.r + gap);
     const ty = b.cy - uy * (b.r + gap);
 
-    // Control point perpendicular to direction
     const mx = (sx + tx) / 2;
     const my = (sy + ty) / 2;
     const perpX = -uy;
     const perpY = ux;
-    // Arc magnitude scales with distance; bigger for "return" (long arcs over the top)
-    const magnitude = arcSign === 0 ? 0 : Math.min(140, dist * 0.25 + 30) * Math.abs(arcSign);
+    const magnitude = arcSign === 0 ? 0 : Math.min(160, dist * 0.28 + 30) * Math.abs(arcSign);
     const sign = arcSign >= 0 ? 1 : -1;
-    const cx = mx + perpX * magnitude * sign;
-    const cy = my + perpY * magnitude * sign;
+    const ccx = mx + perpX * magnitude * sign;
+    const ccy = my + perpY * magnitude * sign;
 
-    const path = `M ${sx},${sy} Q ${cx},${cy} ${tx},${ty}`;
-    // Quadratic midpoint at t=0.5
-    const lx = 0.25 * sx + 0.5 * cx + 0.25 * tx;
-    const ly = 0.25 * sy + 0.5 * cy + 0.25 * ty;
-    return { path, lx, ly };
+    const path = `M ${sx},${sy} Q ${ccx},${ccy} ${tx},${ty}`;
+    // Sample candidate label points along the curve (t = 0.35, 0.5, 0.65)
+    const sample = (t: number) => {
+      const it = 1 - t;
+      const x = it * it * sx + 2 * it * t * ccx + t * t * tx;
+      const y = it * it * sy + 2 * it * t * ccy + t * t * ty;
+      return { x, y };
+    };
+    return { path, samples: [sample(0.35), sample(0.5), sample(0.65)] };
   };
 
-  const ready = Object.keys(rects).length > 0 && size.w > 0;
-
-  // Decide arc direction per edge to reduce overlap:
-  // - return edges always bow upward (over the top) — like the reference's "Settlement details in a batch"
-  // - forward edges between adjacent layers: straight
-  // - forward edges skipping layers: bow downward
-  const getArcSign = (e: Edge, a: Rect, b: Rect) => {
+  const getArcSign = (e: Edge, a: NodePos, b: NodePos) => {
     const layerSpan = Math.abs(b.layer - a.layer);
-    if (e.kind === "return") return -1.2;
-    if (layerSpan >= 2) return 0.8;
+    if (e.kind === "return") return -1.3;
+    if (layerSpan >= 2) return 0.9;
+    if (layerSpan === 0) return 1.0;
     return 0;
   };
+
+  // Build edges with their candidate label samples, then assign non-colliding label positions
+  const edgeData = edges
+    .map((e) => {
+      const a = positions[e.from];
+      const b = positions[e.to];
+      if (!a || !b) return null;
+      const arcSign = getArcSign(e, a, b);
+      const { path, samples } = buildPath(a, b, arcSign);
+      return { e, a, b, path, samples };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+
+  // Greedy label placement: pick the sample that is farthest from already-placed labels and from any node center
+  const placedLabels: { x: number; y: number; w: number; h: number }[] = [];
+  const nodeCenters = Object.values(positions).map(p => ({ x: p.cx, y: p.cy }));
+
+  const labelPositions: { lx: number; ly: number; w: number; h: number }[] = edgeData.map(({ e, samples }) => {
+    const w = Math.max(28, (e.label?.length || 0) * 6.2 + 12);
+    const h = 18;
+    let best = samples[1];
+    let bestScore = -Infinity;
+    for (const s of samples) {
+      // distance to nearest node
+      let nodeMin = Infinity;
+      for (const c of nodeCenters) {
+        const d = Math.hypot(s.x - c.x, s.y - c.y);
+        if (d < nodeMin) nodeMin = d;
+      }
+      // distance to nearest already-placed label
+      let labelMin = Infinity;
+      for (const p of placedLabels) {
+        const dx = Math.max(0, Math.abs(s.x - p.x) - (w / 2 + p.w / 2));
+        const dy = Math.max(0, Math.abs(s.y - p.y) - (h / 2 + p.h / 2));
+        const d = Math.hypot(dx, dy);
+        if (d < labelMin) labelMin = d;
+      }
+      // higher = better. Heavy penalty when overlapping nodes (< node radius)
+      const nodePenalty = nodeMin < NODE_HIT_R + 6 ? -1000 + nodeMin : nodeMin;
+      const labelPenalty = labelMin === 0 ? -500 : labelMin;
+      const score = nodePenalty * 0.6 + labelPenalty * 0.4;
+      if (score > bestScore) {
+        bestScore = score;
+        best = s;
+      }
+    }
+    placedLabels.push({ x: best.x, y: best.y, w, h });
+    return { lx: best.x, ly: best.y, w, h };
+  });
 
   return (
     <div className="space-y-4">
@@ -129,119 +172,121 @@ export const ArchitectureDiagram = ({ layers, edges }: { layers: Layer[]; edges:
         </div>
       </div>
 
-      {/* Diagram canvas — horizontal columns, one per layer */}
-      <div ref={containerRef} className="relative overflow-x-auto rounded-xl border bg-gradient-subtle p-6 md:p-10">
-        {/* SVG arrow layer */}
-        <svg
-          className="pointer-events-none absolute inset-0 h-full w-full"
-          width={size.w}
-          height={size.h}
-          viewBox={`0 0 ${size.w || 1} ${size.h || 1}`}
-        >
-          <defs>
-            {LAYER_COLORS.map((c, i) => (
-              <marker
-                key={i}
-                id={`arch-arrow-${i}`}
-                viewBox="0 0 10 10"
-                refX="8"
-                refY="5"
-                markerWidth="7"
-                markerHeight="7"
-                orient="auto"
-                markerUnits="userSpaceOnUse"
-              >
-                <path d="M 0 0 L 10 5 L 0 10 z" fill={c.stroke} />
-              </marker>
-            ))}
-          </defs>
-          {ready && edges.map((e, i) => {
-            const a = rects[e.from];
-            const b = rects[e.to];
-            if (!a || !b) return null;
-            const c = LAYER_COLORS[a.layer % LAYER_COLORS.length];
-            const arcSign = getArcSign(e, a, b);
-            const { path, lx, ly } = buildPath(a, b, arcSign);
-            const isReturn = e.kind === "return";
-            const markerId = `arch-arrow-${a.layer % LAYER_COLORS.length}`;
-            const labelW = Math.max(28, (e.label?.length || 0) * 6.2 + 10);
-            return (
-              <g key={i} className="animate-fade-in">
-                <path
-                  d={path}
-                  fill="none"
-                  stroke={c.stroke}
-                  strokeWidth={1.75}
-                  strokeOpacity={isReturn ? 0.75 : 0.9}
-                  strokeDasharray={isReturn ? "5 4" : undefined}
-                  markerEnd={`url(#${markerId})`}
-                />
-                {e.label && (
-                  <g transform={`translate(${lx}, ${ly})`}>
-                    {/* subtle background plate so label stays legible over gradient */}
-                    <rect
-                      x={-labelW / 2}
-                      y={-9}
-                      width={labelW}
-                      height={18}
-                      rx={4}
-                      fill="hsl(var(--card))"
-                      fillOpacity={0.85}
-                    />
-                    <text
-                      x={0}
-                      y={4}
-                      textAnchor="middle"
-                      fontSize={10.5}
-                      fontWeight={600}
-                      fill={c.stroke}
-                      style={{ letterSpacing: "0.01em" }}
-                    >
-                      {e.label}
-                    </text>
-                  </g>
-                )}
-              </g>
-            );
-          })}
-        </svg>
-
-        {/* Node columns (above SVG) */}
-        <div
-          className="relative z-10 grid items-center gap-x-8 gap-y-6 md:gap-x-14"
-          style={{ gridTemplateColumns: `repeat(${layers.length}, minmax(120px, 1fr))` }}
-        >
+      {/* Diagram canvas: SVG drives layout; absolutely-positioned divs sit on top of node circles */}
+      <div ref={wrapperRef} className="relative overflow-x-auto rounded-xl border bg-gradient-subtle">
+        <div className="relative" style={{ width: canvasW, height: canvasH }}>
+          {/* Layer headers */}
           {layers.map((l, li) => {
             const c = LAYER_COLORS[li % LAYER_COLORS.length];
+            const cx = SIDE_PADDING + colWidth * li + colWidth / 2;
             return (
-              <div key={li} className="flex flex-col items-center gap-6">
-                {/* Layer name header */}
-                <div className={cn("rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider", c.bg, c.text)}>
-                  {l.name}
+              <div
+                key={`h-${li}`}
+                className={cn("absolute -translate-x-1/2 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap", c.bg, c.text)}
+                style={{ left: cx, top: 16 }}
+              >
+                {l.name}
+              </div>
+            );
+          })}
+
+          {/* SVG: edges + arrows + labels */}
+          <svg
+            className="pointer-events-none absolute inset-0"
+            width={canvasW}
+            height={canvasH}
+            viewBox={`0 0 ${canvasW} ${canvasH}`}
+          >
+            <defs>
+              {LAYER_COLORS.map((c, i) => (
+                <marker
+                  key={i}
+                  id={`arch-arrow-${i}`}
+                  viewBox="0 0 10 10"
+                  refX="8"
+                  refY="5"
+                  markerWidth="7"
+                  markerHeight="7"
+                  orient="auto"
+                  markerUnits="userSpaceOnUse"
+                >
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill={c.stroke} />
+                </marker>
+              ))}
+            </defs>
+            {edgeData.map(({ e, a, path }, i) => {
+              const c = LAYER_COLORS[a.layer % LAYER_COLORS.length];
+              const isReturn = e.kind === "return";
+              const markerId = `arch-arrow-${a.layer % LAYER_COLORS.length}`;
+              const lp = labelPositions[i];
+              return (
+                <g key={i} className="animate-fade-in">
+                  <path
+                    d={path}
+                    fill="none"
+                    stroke={c.stroke}
+                    strokeWidth={1.75}
+                    strokeOpacity={isReturn ? 0.75 : 0.9}
+                    strokeDasharray={isReturn ? "5 4" : undefined}
+                    markerEnd={`url(#${markerId})`}
+                  />
+                  {e.label && (
+                    <g transform={`translate(${lp.lx}, ${lp.ly})`}>
+                      <rect
+                        x={-lp.w / 2}
+                        y={-lp.h / 2}
+                        width={lp.w}
+                        height={lp.h}
+                        rx={4}
+                        fill="hsl(var(--card))"
+                        fillOpacity={0.92}
+                        stroke={c.stroke}
+                        strokeOpacity={0.25}
+                        strokeWidth={1}
+                      />
+                      <text
+                        x={0}
+                        y={3.5}
+                        textAnchor="middle"
+                        fontSize={10.5}
+                        fontWeight={600}
+                        fill={c.stroke}
+                      >
+                        {e.label}
+                      </text>
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* Nodes — absolutely positioned circles + labels */}
+          {Object.values(positions).map(({ id, cx, cy, layer, node }) => {
+            const c = LAYER_COLORS[layer % LAYER_COLORS.length];
+            const Icon = getIcon(node.icon);
+            return (
+              <div
+                key={id}
+                className="absolute flex flex-col items-center"
+                style={{ left: cx, top: cy, transform: "translate(-50%, -50%)" }}
+              >
+                <div
+                  className={cn(
+                    "flex items-center justify-center rounded-full bg-card shadow-tile ring-4 transition-smooth hover:scale-105",
+                    c.ring,
+                  )}
+                  style={{ width: NODE_R * 2, height: NODE_R * 2 }}
+                >
+                  <div className={cn("flex h-10 w-10 items-center justify-center rounded-full", c.bg)}>
+                    <Icon className={cn("h-5 w-5", c.text)} strokeWidth={2.2} />
+                  </div>
                 </div>
-                {/* Circular nodes stacked */}
-                <div className="flex w-full flex-col items-center gap-7">
-                  {l.nodes.map((n) => {
-                    const Icon = getIcon(n.icon);
-                    return (
-                      <div key={n.id} className="flex flex-col items-center gap-2">
-                        <div
-                          ref={(el) => { nodeRefs.current[n.id] = el; }}
-                          className={cn(
-                            "flex h-16 w-16 items-center justify-center rounded-full bg-card shadow-tile ring-4 transition-smooth hover:scale-105 md:h-20 md:w-20",
-                            c.ring,
-                          )}
-                        >
-                          <div className={cn("flex h-10 w-10 items-center justify-center rounded-full md:h-12 md:w-12", c.bg)}>
-                            <Icon className={cn("h-5 w-5 md:h-6 md:w-6", c.text)} strokeWidth={2.2} />
-                          </div>
-                        </div>
-                        <div className="max-w-[110px] text-center text-xs font-semibold leading-tight">
-                          {n.label}
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div
+                  className="mt-1.5 text-center text-[11px] font-semibold leading-tight"
+                  style={{ width: colWidth - 16, maxWidth: 140 }}
+                >
+                  {node.label}
                 </div>
               </div>
             );
