@@ -5,6 +5,22 @@ const KEY_QUESTIONS = (slug: string) => `de:questions:${slug}`;
 const KEY_RECENT = "de:recent";
 const KEY_SAVED_DOMAINS = "de:saved-domains";
 const KEY_SAVED_QUESTIONS = "de:saved-questions";
+const KEY_NOTES = (slug: string) => `de:notes:${slug}`;
+const KEY_FLAGS = (slug: string) => `de:flags:${slug}`;
+const KEY_NOTES_INDEX = "de:notes-index";
+const KEY_FLAGS_INDEX = "de:flags-index";
+
+export type LensKey = "overview" | "terminology" | "users" | "jobs" | "process" | "architecture" | "opportunities" | "products";
+export type FlagKind = "users" | "jobs" | "opportunities" | "products" | "architecture" | "process";
+
+export interface FlagEntry {
+  id: string;       // stable, e.g. `${kind}:${normLabel}`
+  kind: FlagKind;
+  label: string;
+  sub?: string;
+  note?: string;
+  ts: number;
+}
 
 function get<T>(k: string): T | null {
   try { const v = localStorage.getItem(k); return v ? JSON.parse(v) as T : null; } catch { return null; }
