@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Sparkles, Bookmark, History } from "lucide-react";
+import { Search, Sparkles, Bookmark, History, GitCompare, ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { CATEGORIES, DOMAINS, slugify } from "@/data/domains";
 import { DomainTile } from "@/components/DomainTile";
 import { Input } from "@/components/ui/input";
@@ -76,6 +77,25 @@ const Index = () => {
       </section>
 
       <main className="container py-10">
+        {/* Compare CTA */}
+        <Link
+          to="/compare"
+          className="group mb-10 relative flex flex-col items-start gap-4 overflow-hidden rounded-2xl border bg-gradient-hero p-5 text-primary-foreground shadow-tile transition-smooth hover:shadow-tile-hover sm:flex-row sm:items-center sm:p-6"
+        >
+          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute -bottom-12 -left-8 h-40 w-40 rounded-full bg-white/5 blur-3xl" />
+          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
+            <GitCompare className="h-6 w-6" />
+          </div>
+          <div className="relative flex-1">
+            <div className="font-display text-lg font-bold sm:text-xl">Compare industries side-by-side</div>
+            <p className="mt-0.5 text-sm opacity-90">Pick up to 3 domains — see how users, processes, architecture and opportunities differ. Unique items get auto-highlighted.</p>
+          </div>
+          <div className="relative inline-flex items-center gap-1.5 rounded-xl bg-white/15 px-3 py-2 text-sm font-semibold backdrop-blur transition-smooth group-hover:bg-white/25">
+            Open Compare <ChevronRight className="h-4 w-4" />
+          </div>
+        </Link>
+
         {/* Saved */}
         {savedDomains.length > 0 && (
           <section className="mb-10">
