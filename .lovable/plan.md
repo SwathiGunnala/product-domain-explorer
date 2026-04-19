@@ -1,47 +1,44 @@
 
-## Domain Explorer v4 — visual-first explanations throughout
+The Compare feature already exists end-to-end (`src/pages/ComparePage.tsx`, header link, homepage CTA, route, URL hash sharing, unique/shared badging across 6 dimensions). What's missing from the user's framing is the **"pick one lens"** idea — right now we dump all 6 sections at once, which is a lot to scan. Let's add a lens selector so PMs can focus on one dimension at a time, while keeping "All lenses" as the default for power users.
 
-Adding rich visual explainers so concepts stick faster. Everything from v1–v3 stays; this update layers in diagrams, flows, and visual metaphors across every section.
+## What we'll build
 
-### Where visuals get added
+A **Lens selector** on `/compare` that filters which comparison section(s) render. This makes the tool feel sharper and more deliberate — exactly the "pick one lens" framing.
 
-**1. Domain page sections — each gets a visual companion**
+### 1. Lens tabs (pill bar above the grid)
+Seven options, single-select:
+- **All lenses** (default)
+- **Users**
+- **Jobs to be Done**
+- **Process**
+- **Architecture**
+- **Opportunities**
+- **Products**
 
-- **Overview** → a labeled "at-a-glance" infographic: 4 highlight stat tiles (e.g., market size, key players, typical user, maturity stage) with icons
-- **Terminology** → a tag-cloud / chip grid where each term has its own small icon and color, grouped by concept family (e.g., in Payments: Money flow, Security, Parties, Tech rails)
-- **User segments** → a persona card grid: avatar icon, role name, 1-line goal, color-coded by side of the transaction (e.g., supply / demand / enabler / regulator)
-- **Jobs to be done** → numbered objective cards with an outcome icon and a "pain → gain" mini visual
-- **End-to-end process** → a horizontal stepper diagram (numbered nodes connected by arrows), each step with an icon, title, and 1-line description; on mobile it stacks vertically
-- **Architecture** → a block diagram rendered with HTML/CSS (boxes + connecting lines), showing components and labeled arrows for how they communicate; legend with color-coded layers (frontend / service / data / external)
-- **Opportunities** → quadrant matrix (Impact × Feasibility) with opportunity dots placed on it, plus a list view below
-- **Notable products** → already visual; product cards keep their icon + category dot
+Each pill shows the section icon + label. Active pill uses primary color; inactive is muted. Persists to URL hash alongside the slugs (e.g. `#wealth-management,retail,mortgage|lens=jobs`) so a shared link preserves both selection AND lens.
 
-**2. Product deep-dive — visual sections**
+### 2. Focused-lens layout
+When a single lens is picked (not "All"):
+- Hide the other 5 sections
+- Render the chosen section larger: bigger card, more breathing room, taller item rows, sub-text not truncated
+- Add a small lens-summary header strip: "Comparing **Jobs to be Done** across 3 industries — 4 unique, 2 shared"
 
-- **Vision** → a single hero quote-style card with a target icon
-- **Customer segments** → segment ring/donut split (visual % share if AI provides estimates) + persona chips
-- **Revenue model** → revenue stream stack: horizontal bars labeled by stream (subscription, transaction fee, ads, etc.) with rough share if known
-- **What's next** → timeline strip: Past → Now → Next, with milestone dots
+### 3. Empty-lens guard
+If a lens is selected but a domain hasn't loaded data yet for that key, show the existing skeleton. If data is loaded but the array is empty, show the existing "No data" state.
 
-**3. Interview prep — visual touches**
+### 4. Minor polish (while we're in there)
+- Add a **Copy link** button next to Reset so PMs can share the exact lens+selection
+- Add a small **count chip** on each lens pill showing how many items that domain has (e.g. "Users 5") — only when domains are loaded, helps PMs pick the densest lens
 
-- Topic group headers with icon + colored underline
-- Difficulty shown as 1/2/3 filled dots (Easy/Medium/Hard) instead of plain text
-- Progress ring on the Interview Prep page: "X of Y questions reviewed"
+## Files to change
 
-### How the visuals are built
+- `src/pages/ComparePage.tsx` — add `lens` state, URL hash format `slugs|lens=key`, lens pill bar, conditional section rendering, larger focused layout, copy-link button, item-count chips on pills
 
-- All diagrams are **pure HTML + Tailwind + Lucide icons** (no chart library needed for v1) — keeps it fast, themeable, and AI-driveable
-- AI returns structured data per section (e.g., process = array of `{title, description, icon}`; architecture = array of `{nodes, edges}`) via tool-calling, and React components render the visuals from that data
-- A small set of reusable **visual primitives** in `src/components/visuals/`:
-  - `StatTiles`, `TermChipGrid`, `PersonaGrid`, `JtbdCardList`, `ProcessStepper`, `ArchitectureDiagram`, `OpportunityMatrix`, `RevenueStack`, `Timeline`, `DifficultyDots`
-- Each primitive is responsive and uses the category accent color from v3
+No new files, no new routes, no edge function changes, no schema changes.
 
-### Iconography mapping (AI-suggested → Lucide)
+## Technical notes
 
-The AI returns a semantic icon hint per item (e.g., `"shield"`, `"wallet"`, `"clock"`); a small `iconMap` in code maps it to a Lucide component, with a safe fallback (`Circle`). This keeps icons consistent and avoids broken imports.
-
-### What stays the same
-- v1: 7 core sections, AI streaming, local persistence, Library page
-- v2: expanded domain catalog, clickable products with deep-dives, PM interview question prompt
-- v3: domain icons, category colors, gradient tiles, icon-led section headers
+- URL hash parser: split on `|`, first part = comma slugs, optional `lens=...` token
+- Lens pill bar: horizontal scroll on mobile, wraps on desktop
+- "Focused" mode just passes a `focused` boolean to `CompareSection` to bump padding, font sizes, and remove `line-clamp-2` on sub-text
+- Keep the existing unique/shared detection logic — it already works per-section
