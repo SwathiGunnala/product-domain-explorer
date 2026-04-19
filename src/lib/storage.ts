@@ -58,4 +58,34 @@ export const storage = {
     set(KEY_SAVED_QUESTIONS, next);
     return !exists;
   },
+
+  // Notes: per-domain, per-lens free text
+  getNotes: (slug: string): Partial<Record<LensKey, string>> => get<any>(KEY_NOTES(slug)) ?? {},
+  setNote: (slug: string, lens: LensKey, text: string) => {
+    const cur = get<Record<string, string>>(KEY_NOTES(slug)) ?? {};
+    if (text.trim()) cur[lens] = text; else delete cur[lens];
+    set(KEY_NOTES(slug), cur);
+    // index
+    const idx = get<string[]>(KEY_NOTES_INDEX) ?? [];
+    const has = Object.keys(cur).length > 0;
+    const next = has ? Array.from(new Set([slug, ...idx])) : idx.filter(s => s !== slug);
+    set(KEY_NOTES_INDEX, next);
+  },
+  getNotesIndex: (): string[] => get<string[]>(KEY_NOTES_INDEX) ?? [],
+
+  // Flagged patterns: per-domain list of items the user marked interesting
+  getFlags: (slug: string): FlagEntry[] => get<FlagEntry[]>(KEY_FLAGS(slug)) ?? [],
+  isFlagged: (slug: string, id: string) => (get<FlagEntry[]>(KEY_FLAGS(slug)) ?? []).some(f => f.id === id),
+  toggleFlag: (slug: string, entry: Omit<FlagEntry, "ts">): boolean => {
+    const cur = get<FlagEntry[]>(KEY_FLAGS(slug)) ?? [];
+    const exists = cur.some(f => f.id === entry.id);
+    const next = exists ? cur.filter(f => f.id !== entry.id) : [{ ...entry, ts: Date.now() }, ...cur];
+    set(KEY_FLAGS(slug), next);
+    const idx = get<string[]>(KEY_FLAGS_INDEX) ?? [];
+    const has = next.length > 0;
+    const idxNext = has ? Array.from(new Set([slug, ...idx])) : idx.filter(s => s !== slug);
+    set(KEY_FLAGS_INDEX, idxNext);
+    return !exists;
+  },
+  getFlagsIndex: (): string[] => get<string[]>(KEY_FLAGS_INDEX) ?? [],
 };
