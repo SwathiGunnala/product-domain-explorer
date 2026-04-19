@@ -10,6 +10,7 @@ import ProductPage from "./pages/ProductPage.tsx";
 import InterviewPage from "./pages/InterviewPage.tsx";
 import LibraryPage from "./pages/LibraryPage.tsx";
 import InterviewPrepPage from "./pages/InterviewPrepPage.tsx";
+import ComparePage from "./pages/ComparePage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/domain/:slug/interview" element={<InterviewPage />} />
           <Route path="/library" element={<LibraryPage />} />
           <Route path="/interview-prep" element={<InterviewPrepPage />} />
+          <Route path="/compare" element={<ComparePage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

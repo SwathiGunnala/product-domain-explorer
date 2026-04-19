@@ -1,11 +1,12 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { Compass, Library, Brain } from "lucide-react";
+import { Compass, Library, Brain, GitCompare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const SiteHeader = () => {
   const loc = useLocation();
   const items = [
     { to: "/", label: "Explore", icon: Compass },
+    { to: "/compare", label: "Compare", icon: GitCompare },
     { to: "/library", label: "Library", icon: Library },
     { to: "/interview-prep", label: "Interview Prep", icon: Brain },
   ];
