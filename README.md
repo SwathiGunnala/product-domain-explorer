@@ -16,6 +16,7 @@ As Product Managers, we're constantly thrown into new domains — payments, logi
 - Scattered blog posts
 - Internal wiki docs that are always outdated
 - Books that take weeks to read
+- Lengthy Youtube Videos and podcasts that take long to consume
 
 **The problem:** It takes days to weeks to build enough context to have meaningful conversations with stakeholders, customers, and engineers.
 
