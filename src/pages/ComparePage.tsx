@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, GitCompare, Plus, X, Users, Target, Workflow, Network, Lightbulb, Package, Sparkles, Star, RefreshCw } from "lucide-react";
+import { ArrowLeft, GitCompare, Plus, X, Users, Target, Workflow, Network, Lightbulb, Package, Sparkles, Star, RefreshCw, Link2, LayoutGrid } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,27 +30,39 @@ interface DomainData {
   loading: boolean;
 }
 
+type LensKey = "all" | "users" | "jobs" | "process" | "architecture" | "opportunities" | "products";
+
 const ComparePage = () => {
   const [picked, setPicked] = useState<string[]>([]);
   const [store, setStore] = useState<Record<string, DomainData>>({});
+  const [lens, setLens] = useState<LensKey>("all");
 
-  // Hydrate from URL hash so shares preserve selection
+  // Hydrate from URL hash so shares preserve selection + lens
   useEffect(() => {
     const h = decodeURIComponent(window.location.hash.replace(/^#/, ""));
     if (h) {
-      const slugs = h.split(",").filter(Boolean).slice(0, MAX);
+      const [slugPart, ...rest] = h.split("|");
+      const slugs = (slugPart || "").split(",").filter(Boolean).slice(0, MAX);
       slugs.forEach(s => addDomain(s, true));
+      const lensToken = rest.find(t => t.startsWith("lens="));
+      if (lensToken) {
+        const v = lensToken.slice(5) as LensKey;
+        if (["all", "users", "jobs", "process", "architecture", "opportunities", "products"].includes(v)) {
+          setLens(v);
+        }
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (picked.length) {
-      window.history.replaceState(null, "", `#${encodeURIComponent(picked.join(","))}`);
+      const lensPart = lens !== "all" ? `|lens=${lens}` : "";
+      window.history.replaceState(null, "", `#${encodeURIComponent(picked.join(","))}${lensPart}`);
     } else {
       window.history.replaceState(null, "", window.location.pathname);
     }
-  }, [picked]);
+  }, [picked, lens]);
 
   const addDomain = async (slug: string, silent = false) => {
     if (!slug) return;
@@ -95,6 +107,16 @@ const ComparePage = () => {
 
   const reset = () => {
     setPicked([]);
+    setLens("all");
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success("Link copied");
+    } catch {
+      toast.error("Couldn't copy");
+    }
   };
 
   return (
@@ -117,14 +139,19 @@ const ComparePage = () => {
               <div>
                 <h1 className="font-display text-3xl font-bold tracking-tight md:text-4xl">Compare industries</h1>
                 <p className="mt-1 max-w-xl text-balance text-sm text-muted-foreground md:text-base">
-                  Pick up to 3 domains. We'll line up users, jobs, process, architecture, opportunities and products — and badge the parts that are <span className="font-semibold text-foreground">unique</span> to one industry.
+                  Pick up to 3 domains, then choose a <span className="font-semibold text-foreground">lens</span> to focus the comparison. We badge what's <span className="font-semibold text-foreground">unique</span> to one industry vs <span className="font-semibold text-foreground">shared</span> across all.
                 </p>
               </div>
             </div>
             {picked.length > 0 && (
-              <Button variant="outline" size="sm" onClick={reset}>
-                <RefreshCw className="h-4 w-4" /> Reset
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={copyLink}>
+                  <Link2 className="h-4 w-4" /> Copy link
+                </Button>
+                <Button variant="outline" size="sm" onClick={reset}>
+                  <RefreshCw className="h-4 w-4" /> Reset
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -151,7 +178,10 @@ const ComparePage = () => {
         {picked.length === 0 && <EmptyState onPick={addDomain} />}
 
         {picked.length > 0 && (
-          <CompareGrid picked={picked} store={store} />
+          <>
+            <LensBar lens={lens} setLens={setLens} picked={picked} store={store} />
+            <CompareGrid picked={picked} store={store} lens={lens} />
+          </>
         )}
       </main>
     </div>
@@ -285,17 +315,17 @@ const SECTIONS = [
   { id: "products", title: "Notable products", subtitle: "Players in the space", icon: Package, key: "products", labelOf: (x: any) => x.name, sublabelOf: (x: any) => x.company, iconOf: (x: any) => x.icon },
 ] as const;
 
-const CompareGrid = ({ picked, store }: { picked: string[]; store: Record<string, DomainData> }) => {
-  return (
-    <div className="space-y-5">
-      {SECTIONS.map(sec => (
-        <CompareSection key={sec.id} sec={sec} picked={picked} store={store} />
-      ))}
-    </div>
-  );
-};
+const LENSES: Array<{ key: LensKey; title: string; icon: any }> = [
+  { key: "all", title: "All lenses", icon: LayoutGrid },
+  { key: "users", title: "Users", icon: Users },
+  { key: "jobs", title: "Jobs to be Done", icon: Target },
+  { key: "process", title: "Process", icon: Workflow },
+  { key: "architecture", title: "Architecture", icon: Network },
+  { key: "opportunities", title: "Opportunities", icon: Lightbulb },
+  { key: "products", title: "Products", icon: Package },
+];
 
-const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const norm = (s: string) => (s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
 const extract = (data: any, key: string): Array<{ label: string; sub?: string; icon?: string }> => {
   if (!data) return [];
@@ -308,7 +338,112 @@ const extract = (data: any, key: string): Array<{ label: string; sub?: string; i
   return arr.map(x => ({ label: sec.labelOf(x), sub: sec.sublabelOf(x), icon: sec.iconOf(x) }));
 };
 
-const CompareSection = ({ sec, picked, store }: { sec: any; picked: string[]; store: Record<string, DomainData> }) => {
+const LensBar = ({
+  lens,
+  setLens,
+  picked,
+  store,
+}: {
+  lens: LensKey;
+  setLens: (l: LensKey) => void;
+  picked: string[];
+  store: Record<string, DomainData>;
+}) => {
+  const totalsByKey = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const sec of SECTIONS) {
+      let n = 0;
+      for (const slug of picked) {
+        n += extract(store[slug]?.data, sec.key).length;
+      }
+      out[sec.key] = n;
+    }
+    return out;
+  }, [picked, store]);
+
+  return (
+    <div className="-mx-1 flex flex-nowrap gap-2 overflow-x-auto px-1 pb-1 md:flex-wrap md:overflow-visible">
+      {LENSES.map(l => {
+        const Icon = l.icon;
+        const active = lens === l.key;
+        const count = l.key === "all" ? null : totalsByKey[l.key];
+        return (
+          <button
+            key={l.key}
+            onClick={() => setLens(l.key)}
+            className={cn(
+              "inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-smooth",
+              active
+                ? "border-primary bg-primary text-primary-foreground shadow-tile"
+                : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
+            )}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {l.title}
+            {count !== null && count > 0 && (
+              <span className={cn(
+                "inline-flex h-4 min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold",
+                active ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-foreground/70",
+              )}>
+                {count}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+const CompareGrid = ({ picked, store, lens }: { picked: string[]; store: Record<string, DomainData>; lens: LensKey }) => {
+  const visible = lens === "all" ? SECTIONS : SECTIONS.filter(s => s.key === lens);
+  const focused = lens !== "all";
+  return (
+    <div className="space-y-5">
+      {focused && <LensSummary sec={visible[0]} picked={picked} store={store} />}
+      {visible.map(sec => (
+        <CompareSection key={sec.id} sec={sec} picked={picked} store={store} focused={focused} />
+      ))}
+    </div>
+  );
+};
+
+const LensSummary = ({ sec, picked, store }: { sec: any; picked: string[]; store: Record<string, DomainData> }) => {
+  const perColumn = picked.map(slug => extract(store[slug]?.data, sec.key));
+  const sets = perColumn.map(items => new Set(items.map(i => norm(i.label))));
+  const allLabels = new Set<string>();
+  sets.forEach(s => s.forEach(v => allLabels.add(v)));
+
+  let unique = 0;
+  let shared = 0;
+  allLabels.forEach(k => {
+    const presence = sets.filter(s => s.has(k)).length;
+    if (presence === 1) unique++;
+    else if (presence === sets.length && sets.length > 1) shared++;
+  });
+
+  const Icon = sec.icon;
+  return (
+    <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-gradient-to-br from-primary/5 to-transparent px-4 py-3">
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="text-sm">
+        Comparing <span className="font-bold">{sec.title}</span> across {picked.length} {picked.length === 1 ? "industry" : "industries"}
+      </div>
+      <div className="ml-auto flex items-center gap-2">
+        <Badge variant="default" className="gap-1">
+          <Sparkles className="h-3 w-3" /> {unique} unique
+        </Badge>
+        <Badge variant="secondary" className="gap-1">
+          <Star className="h-3 w-3" /> {shared} shared
+        </Badge>
+      </div>
+    </div>
+  );
+};
+
+const CompareSection = ({ sec, picked, store, focused }: { sec: any; picked: string[]; store: Record<string, DomainData>; focused: boolean }) => {
   const Icon = sec.icon;
 
   // Build label sets per column for unique detection
@@ -329,12 +464,12 @@ const CompareSection = ({ sec, picked, store }: { sec: any; picked: string[]; st
 
   return (
     <section className="overflow-hidden rounded-2xl border bg-card shadow-card">
-      <div className="flex items-center gap-3 border-b bg-muted/40 px-4 py-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary">
-          <Icon className="h-4 w-4" />
+      <div className={cn("flex items-center gap-3 border-b bg-muted/40", focused ? "px-5 py-4" : "px-4 py-3")}>
+        <div className={cn("flex items-center justify-center rounded-lg bg-secondary", focused ? "h-10 w-10" : "h-8 w-8")}>
+          <Icon className={cn(focused ? "h-5 w-5" : "h-4 w-4")} />
         </div>
         <div>
-          <div className="font-display text-base font-bold leading-tight">{sec.title}</div>
+          <div className={cn("font-display font-bold leading-tight", focused ? "text-lg" : "text-base")}>{sec.title}</div>
           <div className="text-xs text-muted-foreground">{sec.subtitle}</div>
         </div>
         <div className="ml-auto flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide">
@@ -353,7 +488,7 @@ const CompareSection = ({ sec, picked, store }: { sec: any; picked: string[]; st
           const items = perColumn[col];
           const styles = item ? CATEGORY_STYLES[(item.domain as any).category as keyof typeof CATEGORY_STYLES] : null;
           return (
-            <div key={slug} className="min-w-0 p-4">
+            <div key={slug} className={cn("min-w-0", focused ? "p-5" : "p-4")}>
               <div className="mb-3 flex items-center gap-2">
                 <span className={cn("h-2 w-2 rounded-full", styles?.dot)} />
                 <span className="truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -362,14 +497,14 @@ const CompareSection = ({ sec, picked, store }: { sec: any; picked: string[]; st
               </div>
               {item?.loading ? (
                 <div className="space-y-2">
-                  {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+                  {[...Array(focused ? 6 : 4)].map((_, i) => <Skeleton key={i} className={cn("w-full", focused ? "h-16" : "h-12")} />)}
                 </div>
               ) : items.length === 0 ? (
                 <div className="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">
                   No data
                 </div>
               ) : (
-                <ul className="space-y-2">
+                <ul className={cn(focused ? "space-y-2.5" : "space-y-2")}>
                   {items.map((it, idx) => {
                     const unique = isUnique(col, it.label);
                     const shared = !unique && isShared(it.label);
@@ -378,21 +513,23 @@ const CompareSection = ({ sec, picked, store }: { sec: any; picked: string[]; st
                       <li
                         key={idx}
                         className={cn(
-                          "group flex items-start gap-2.5 rounded-xl border p-2.5 transition-smooth",
+                          "group flex items-start gap-2.5 rounded-xl border transition-smooth",
+                          focused ? "p-3.5" : "p-2.5",
                           unique ? "border-primary/40 bg-primary/5 shadow-sm" : "border-border bg-background hover:bg-muted/40",
                         )}
                       >
                         {ItIcon && (
                           <div className={cn(
-                            "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
+                            "mt-0.5 flex shrink-0 items-center justify-center rounded-md",
+                            focused ? "h-8 w-8" : "h-7 w-7",
                             unique ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
                           )}>
-                            <ItIcon className="h-3.5 w-3.5" />
+                            <ItIcon className={cn(focused ? "h-4 w-4" : "h-3.5 w-3.5")} />
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-sm font-semibold leading-tight">{it.label}</span>
+                            <span className={cn("font-semibold leading-tight", focused ? "text-[15px]" : "text-sm")}>{it.label}</span>
                             {unique && (
                               <Badge variant="default" className="h-4 gap-1 px-1.5 py-0 text-[9px]">
                                 <Sparkles className="h-2.5 w-2.5" /> Unique
@@ -403,7 +540,10 @@ const CompareSection = ({ sec, picked, store }: { sec: any; picked: string[]; st
                             )}
                           </div>
                           {it.sub && (
-                            <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{it.sub}</div>
+                            <div className={cn(
+                              "mt-0.5 text-xs text-muted-foreground",
+                              focused ? "" : "line-clamp-2",
+                            )}>{it.sub}</div>
                           )}
                         </div>
                       </li>
