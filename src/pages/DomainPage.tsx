@@ -155,22 +155,45 @@ const DomainPage = () => {
           <>
             <SectionCard id="overview" icon={<BookOpen className="h-4 w-4" />} title="Overview" subtitle={data.overview?.summary}>
               <StatTiles stats={data.overview.stats} category={category} />
+              <LensNotes slug={slug} lens="overview" placeholder="Why does this domain matter? What surprised you?" />
             </SectionCard>
 
             <SectionCard id="terminology" icon={<Tags className="h-4 w-4" />} title="Terminology" subtitle="Key vocabulary">
               <TermChipGrid groups={data.terminology} category={category} />
+              <LensNotes slug={slug} lens="terminology" placeholder="Terms to memorize, jargon that confused you, mental models…" />
             </SectionCard>
 
             <SectionCard id="users" icon={<Users className="h-4 w-4" />} title="Users" subtitle="Who's involved">
               <PersonaGrid personas={data.users} />
+              <FlagPicker
+                slug={slug}
+                kind="users"
+                items={(data.users || []).map((u: any) => ({ label: u.role, sub: u.goal }))}
+                emptyHint="Mark personas you find non-obvious or under-served."
+              />
+              <LensNotes slug={slug} lens="users" placeholder="Which user is most under-served? Where does power sit?" />
             </SectionCard>
 
             <SectionCard id="jobs" icon={<Target className="h-4 w-4" />} title="Jobs to be Done" subtitle="Pain → Gain">
               <JtbdCardList jobs={data.jobs} />
+              <FlagPicker
+                slug={slug}
+                kind="jobs"
+                items={(data.jobs || []).map((j: any) => ({ label: j.title, sub: `Pain: ${j.pain}` }))}
+                emptyHint="Mark jobs you'd want to dig into in interviews."
+              />
+              <LensNotes slug={slug} lens="jobs" placeholder="Which job is most painful? Which is faked vs solved?" />
             </SectionCard>
 
             <SectionCard id="process" icon={<Workflow className="h-4 w-4" />} title="Process" subtitle="Start to finish">
               <ProcessStepper steps={data.process} category={category} />
+              <FlagPicker
+                slug={slug}
+                kind="process"
+                items={(data.process || []).map((s: any) => ({ label: s.title, sub: s.description }))}
+                emptyHint="Flag steps where friction or drop-off lives."
+              />
+              <LensNotes slug={slug} lens="process" placeholder="Where does friction live? Which step would you remove?" />
             </SectionCard>
 
             <SectionCard id="architecture" icon={<Network className="h-4 w-4" />} title="Architecture" subtitle="Step-by-step interaction flow">
@@ -179,10 +202,26 @@ const DomainPage = () => {
                 flow={(data.architecture as any).flow}
                 edges={(data.architecture as any).edges}
               />
+              <FlagPicker
+                slug={slug}
+                kind="architecture"
+                items={(data.architecture?.layers || []).flatMap((l: any) =>
+                  (l.nodes || []).map((n: any) => ({ label: n.label, sub: l.name }))
+                )}
+                emptyHint="Flag components that look like leverage points."
+              />
+              <LensNotes slug={slug} lens="architecture" placeholder="Which layer owns the moat? Where is the integration risk?" />
             </SectionCard>
 
             <SectionCard id="opportunities" icon={<Lightbulb className="h-4 w-4" />} title="Opportunities" subtitle="Impact × Feasibility">
               <OpportunityMatrix items={data.opportunities} />
+              <FlagPicker
+                slug={slug}
+                kind="opportunities"
+                items={(data.opportunities || []).map((o: any) => ({ label: o.title, sub: o.description }))}
+                emptyHint="Flag bets you'd actually pursue."
+              />
+              <LensNotes slug={slug} lens="opportunities" placeholder="Your top 3 bets — and what would have to be true?" />
             </SectionCard>
 
             <SectionCard id="products" icon={<Package className="h-4 w-4" />} title="Notable Products" subtitle="Tap for deep-dive">
@@ -190,6 +229,13 @@ const DomainPage = () => {
                 products={data.products}
                 onSelect={(p) => navigate(`/domain/${slug}/product/${encodeURIComponent(p.name)}?company=${encodeURIComponent(p.company)}`)}
               />
+              <FlagPicker
+                slug={slug}
+                kind="products"
+                items={(data.products || []).map((p: any) => ({ label: p.name, sub: p.company }))}
+                emptyHint="Flag products to study deeper."
+              />
+              <LensNotes slug={slug} lens="products" placeholder="Who's winning and why? What's the wedge?" />
             </SectionCard>
 
             {/* Interview prompt */}
