@@ -19,6 +19,8 @@ import { ProcessStepper } from "@/components/visuals/ProcessStepper";
 import { ArchitectureDiagram } from "@/components/visuals/ArchitectureDiagram";
 import { OpportunityMatrix } from "@/components/visuals/OpportunityMatrix";
 import { ProductGrid } from "@/components/visuals/ProductGrid";
+import { LensNotes } from "@/components/LensNotes";
+import { FlagPicker } from "@/components/FlagPicker";
 import { cn } from "@/lib/utils";
 
 const DomainPage = () => {
