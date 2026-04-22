@@ -64,7 +64,7 @@ const Index = () => {
                 <Input
                   value={query}
                   onChange={e => setQuery(e.target.value)}
-                  placeholder="Try 'quantum computing' or pick below…"
+                  placeholder={'Try "healthcare\' or pick below..'}
                   className="h-12 rounded-xl border-2 pl-10 pr-3 text-base shadow-tile focus-visible:ring-primary"
                 />
               </div>
