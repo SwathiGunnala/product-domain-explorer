@@ -9,6 +9,7 @@ const KEY_NOTES = (slug: string) => `de:notes:${slug}`;
 const KEY_FLAGS = (slug: string) => `de:flags:${slug}`;
 const KEY_NOTES_INDEX = "de:notes-index";
 const KEY_FLAGS_INDEX = "de:flags-index";
+const KEY_WARMED_DOMAINS = "de:warmed-domains";
 
 export type LensKey = "overview" | "terminology" | "users" | "jobs" | "process" | "architecture" | "opportunities" | "products";
 export type FlagKind = "users" | "jobs" | "opportunities" | "products" | "architecture" | "process";
@@ -30,6 +31,11 @@ function set<T>(k: string, v: T) { try { localStorage.setItem(k, JSON.stringify(
 export const storage = {
   getDomain: (slug: string) => get<any>(KEY_DOMAIN(slug)),
   setDomain: (slug: string, data: any) => set(KEY_DOMAIN(slug), data),
+  getWarmedDomains: (): string[] => get<string[]>(KEY_WARMED_DOMAINS) ?? [],
+  markDomainWarmed: (slug: string) => {
+    const cur = get<string[]>(KEY_WARMED_DOMAINS) ?? [];
+    set(KEY_WARMED_DOMAINS, Array.from(new Set([slug, ...cur])).slice(0, 80));
+  },
   getProduct: (d: string, p: string) => get<any>(KEY_PRODUCT(d, p)),
   setProduct: (d: string, p: string, data: any) => set(KEY_PRODUCT(d, p), data),
   getQuestions: (slug: string) => get<any>(KEY_QUESTIONS(slug)),
