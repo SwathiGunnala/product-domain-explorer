@@ -185,7 +185,7 @@ serve(async (req) => {
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: `You are an expert industry analyst. Produce VISUAL-FIRST explainers — extremely terse copy, every field is scannable.
 

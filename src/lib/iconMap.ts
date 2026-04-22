@@ -1,5 +1,33 @@
-import * as Icons from "lucide-react";
-import { LucideIcon } from "lucide-react";
+import {
+  AlertOctagon, AlertTriangle, Apple, ArrowRight, Banknote, BarChart3, BedDouble, Bell, BellRing, Bike, Bitcoin,
+  Blocks, BookCopy, BookOpen, Bot, Box, Brain, Briefcase, Building, Building2, Calculator, Calendar, Car,
+  CheckCircle2, CheckSquare, ChefHat, CircleMinus, CirclePlus, ClipboardList, Clock, Cloud, Code, Code2, Coffee,
+  Coins, Compass, Cpu, CreditCard, Database, DollarSign, Dumbbell, Edit3, Eye, Factory, FileText, Filter,
+  Fingerprint, Flag, Flame, FolderOpen, Gamepad2, Gavel, Gem, GitBranch, Globe, GraduationCap, HandCoins,
+  HardHat, Heart, HeartPulse, HelpCircle, Hexagon, Home, Hospital, Info, Key, KeyRound, Landmark, Layers,
+  Lightbulb, LineChart, Lock, LogIn, Mail, MessageCircle, MessageSquare, Monitor, MousePointerClick, Navigation,
+  Network, Package, Percent, Phone, PieChart, Pill, Plane, PlayCircle, Plug, Puzzle, Receipt, RefreshCw, Rocket,
+  Scale, ScanLine, School, Search, Send, Server, Settings, Shield, ShieldAlert, ShieldCheck, Ship, Shirt,
+  ShoppingBag, ShoppingCart, Smartphone, Sparkles, Star, Stethoscope, Store, Tag, Target, TerminalSquare, ToyBrick,
+  TrendingUp, Trophy, Truck, UploadCloud, User, Users, UtensilsCrossed, Wallet, Wand2, Warehouse, Waypoints, Wheat,
+  Workflow, Wrench, Zap, type LucideIcon,
+} from "lucide-react";
+
+const Icons: Record<string, LucideIcon> = {
+  AlertOctagon, AlertTriangle, Apple, ArrowRight, Banknote, BarChart3, BedDouble, Bell, BellRing, Bike, Bitcoin,
+  Blocks, BookCopy, BookOpen, Bot, Box, Brain, Briefcase, Building, Building2, Calculator, Calendar, Car,
+  CheckCircle2, CheckSquare, ChefHat, CircleMinus, CirclePlus, ClipboardList, Clock, Cloud, Code, Code2, Coffee,
+  Coins, Compass, Cpu, CreditCard, Database, DollarSign, Dumbbell, Edit3, Eye, Factory, FileText, Filter,
+  Fingerprint, Flag, Flame, FolderOpen, Gamepad2, Gavel, Gem, GitBranch, Globe, GraduationCap, HandCoins,
+  HardHat, Heart, HeartPulse, HelpCircle, Hexagon, Home, Hospital, Info, Key, KeyRound, Landmark, Layers,
+  Lightbulb, LineChart, Lock, LogIn, Mail, MessageCircle, MessageSquare, Monitor, MousePointerClick, Navigation,
+  Network, Package, Percent, Phone, PieChart, Pill, Plane, PlayCircle, Plug, Puzzle, Receipt, RefreshCw, Rocket,
+  Scale, ScanLine, School, Search, Send, Server, Settings, Shield, ShieldAlert, ShieldCheck, Ship, Shirt,
+  ShoppingBag, ShoppingCart, Smartphone, Sparkles, Star, Stethoscope, Store, Tag, Target, TerminalSquare, ToyBrick,
+  TrendingUp, Trophy, Truck, UploadCloud, User, Users, UtensilsCrossed, Wallet, Wand2, Warehouse, Waypoints, Wheat,
+  Workflow, Wrench, Zap,
+  Gateway: Network,
+};
 
 // Map AI-suggested semantic hints (or any lucide name) → Lucide component.
 // Falls back to a stable per-hint icon (not always Circle) so visuals stay distinct.
@@ -24,7 +52,7 @@ function stripEmoji(s: string) {
 }
 
 export function getIcon(hint?: string | null): LucideIcon {
-  if (!hint) return Icons.Sparkles;
+  if (!hint) return Sparkles;
   const cleaned = stripEmoji(hint);
   const seed = (cleaned || hint).toLowerCase();
 
@@ -36,7 +64,7 @@ export function getIcon(hint?: string | null): LucideIcon {
       .filter(Boolean)
       .map(w => w[0].toUpperCase() + w.slice(1).toLowerCase())
       .join("");
-    const direct = (Icons as unknown as Record<string, LucideIcon>)[normalized];
+    const direct = Icons[normalized];
     if (direct) return direct;
   }
 
@@ -82,11 +110,11 @@ export function getIcon(hint?: string | null): LucideIcon {
   const aliasKey = seed.replace(/[^a-z]/g, "");
   const aliased = aliases[aliasKey];
   if (aliased) {
-    const c = (Icons as unknown as Record<string, LucideIcon>)[aliased];
+    const c = Icons[aliased];
     if (c) return c;
   }
 
   // Stable fallback per hint so different items get different icons
   const fb = hashPick(seed || "x", FALLBACK_POOL);
-  return (Icons as unknown as Record<string, LucideIcon>)[fb] || Icons.Sparkles;
+  return Icons[fb] || Sparkles;
 }
