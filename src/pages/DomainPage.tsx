@@ -41,9 +41,11 @@ const DomainPage = () => {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
+    const cached = storage.getDomain(slug);
+    setData(cached);
     setSaved(storage.getSavedDomains().includes(slug));
     storage.pushRecent(slug);
-    if (!data) generate();
+    if (!cached) generate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
@@ -67,6 +69,7 @@ const DomainPage = () => {
       }
       setData(result);
       storage.setDomain(slug, result);
+      storage.markDomainWarmed(slug);
     } catch (e: any) {
       console.error(e);
       const msg = e?.context?.body ? JSON.parse(e.context.body || "{}").error : e?.message;
