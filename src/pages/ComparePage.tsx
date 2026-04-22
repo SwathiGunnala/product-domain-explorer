@@ -94,6 +94,7 @@ const ComparePage = () => {
         return;
       }
       storage.setDomain(slug, result);
+      storage.markDomainWarmed(slug);
       setStore(prev => ({ ...prev, [slug]: { slug, domain: meta, data: result, loading: false } }));
     } catch (e: any) {
       toast.error(e?.message || "Failed to load");
