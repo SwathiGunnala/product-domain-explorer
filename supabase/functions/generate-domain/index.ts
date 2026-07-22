@@ -6,6 +6,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// In-memory cache (per edge-instance). 24h TTL. Warm hits return in <100ms.
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const cache = new Map<string, { at: number; body: string }>();
+const cacheKey = (domain: string) => domain.trim().toLowerCase();
+
 const tool = {
   type: "function",
   function: {
@@ -173,21 +178,7 @@ const tool = {
   },
 };
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-  try {
-    const { domain } = await req.json();
-    if (!domain) throw new Error("Missing domain");
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: `You are an expert industry analyst. Produce VISUAL-FIRST explainers — extremely terse copy, every field is scannable.
+const SYSTEM_PROMPT = `You are an expert industry analyst. Produce VISUAL-FIRST explainers — extremely terse copy, every field is scannable.
 
 ICON RULES (CRITICAL): Every "icon" field MUST be a valid Lucide React icon name in PascalCase (e.g. "CreditCard", "Wallet", "ShieldCheck", "Users", "Building2", "Truck", "Stethoscope", "Banknote", "Globe", "Lock", "Server", "Database", "Cpu", "Smartphone", "Store", "Factory", "Plane", "Car", "BarChart3", "Sparkles", "Zap", "Target", "Workflow", "Network", "Package", "FileText", "Mail", "MessageSquare", "Search", "Settings", "AlertTriangle", "TrendingUp", "DollarSign", "ShoppingCart", "Bot", "Brain", "Cloud", "Layers", "GitBranch", "Plug", "Key", "Eye", "HeartPulse"). NEVER use emojis. NEVER use kebab-case. NEVER invent names. Pick a real Lucide icon that semantically fits the entity. Each user/persona, job, process step, architecture node, opportunity, and product MUST have a meaningful, distinct Lucide icon.
 
@@ -206,13 +197,51 @@ STRICT WORD LIMITS (hard caps, no exceptions):
 - opportunity.title: max 5 words; opportunity.description: max 12 words
 - product.tagline: max 10 words
 No filler, no marketing fluff, no full sentences where a phrase works. Use real product/company names.
-Counts: exactly 4 stats; 4-6 terminology groups (2-6 terms each); 4-8 users (side ∈ supply|demand|enabler|regulator); 4-6 jobs; 4-7 process steps; 3-4 architecture layers (2-4 nodes); 6-10 flow steps; 4-6 opportunities (impact & feasibility 1-5); 6-8 products (category ∈ Incumbent|Challenger|Infrastructure|Niche).` },
-          { role: "user", content: `Generate a complete visual explainer for the "${domain}" domain. Be specific to this domain, not generic. Use real product/company names where appropriate.` },
-        ],
-        tools: [tool],
-        tool_choice: { type: "function", function: { name: "describe_domain" } },
-      }),
-    });
+Counts: exactly 4 stats; 4-6 terminology groups (2-6 terms each); 4-8 users (side ∈ supply|demand|enabler|regulator); 4-6 jobs; 4-7 process steps; 3-4 architecture layers (2-4 nodes); 6-10 flow steps; 4-6 opportunities (impact & feasibility 1-5); 6-8 products (category ∈ Incumbent|Challenger|Infrastructure|Niche).`;
+
+async function callGateway(domain: string, apiKey: string, model: string, priority: boolean) {
+  const body: Record<string, unknown> = {
+    model,
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: `Generate a complete visual explainer for the "${domain}" domain. Be specific to this domain, not generic. Use real product/company names where appropriate.` },
+    ],
+    tools: [tool],
+    tool_choice: { type: "function", function: { name: "describe_domain" } },
+  };
+  if (priority) body.service_tier = "priority";
+
+  return await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  try {
+    const { domain } = await req.json();
+    if (!domain) throw new Error("Missing domain");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
+    // Cache hit — instant return.
+    const key = cacheKey(domain);
+    const hit = cache.get(key);
+    if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
+      return new Response(hit.body, { headers: { ...corsHeaders, "Content-Type": "application/json", "X-Cache": "HIT" } });
+    }
+
+    // Primary: gpt-5.4-mini w/ priority (fast, cheap, strong for tool calls).
+    let resp = await callGateway(domain, LOVABLE_API_KEY, "openai/gpt-5.4-mini", true);
+
+    // Fallback to Gemini 3.5 Flash on gateway failure (rate-limit / transient).
+    if (!resp.ok && resp.status !== 402) {
+      const t = await resp.text().catch(() => "");
+      console.warn("Primary model failed, falling back:", resp.status, t.slice(0, 200));
+      resp = await callGateway(domain, LOVABLE_API_KEY, "google/gemini-3.5-flash", false);
+    }
 
     if (!resp.ok) {
       const status = resp.status;
@@ -227,7 +256,9 @@ Counts: exactly 4 stats; 4-6 terminology groups (2-6 terms each); 4-8 users (sid
     const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
     if (!args) throw new Error("No tool call returned");
     const parsed = JSON.parse(args);
-    return new Response(JSON.stringify(parsed), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const bodyStr = JSON.stringify(parsed);
+    cache.set(key, { at: Date.now(), body: bodyStr });
+    return new Response(bodyStr, { headers: { ...corsHeaders, "Content-Type": "application/json", "X-Cache": "MISS" } });
   } catch (e) {
     console.error("generate-domain error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });

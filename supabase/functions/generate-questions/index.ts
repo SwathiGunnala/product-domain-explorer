@@ -49,6 +49,9 @@ const tool = {
   },
 };
 
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const cache = new Map<string, { at: number; body: string }>();
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
@@ -58,20 +61,37 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     const productList = Array.isArray(products) && products.length ? `Notable products in this domain: ${products.join(", ")}.` : "";
+    const key = (domain || "").toLowerCase();
+    const hit = cache.get(key);
+    if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
+      return new Response(hit.body, { headers: { ...corsHeaders, "Content-Type": "application/json", "X-Cache": "HIT" } });
+    }
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+    const buildBody = (model: string, priority: boolean) => {
+      const b: Record<string, unknown> = {
+        model,
         messages: [
           { role: "system", content: "You generate realistic Product Manager interview questions. Tailor them tightly to the domain. Mix difficulties. Reference real products where useful." },
           { role: "user", content: `Generate PM interview questions for the "${domain}" domain. ${productList}` },
         ],
         tools: [tool],
         tool_choice: { type: "function", function: { name: "generate_questions" } },
-      }),
+      };
+      if (priority) b.service_tier = "priority";
+      return b;
+    };
+    const call = (model: string, priority: boolean) => fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify(buildBody(model, priority)),
     });
+
+    let resp = await call("openai/gpt-5.4-mini", true);
+    if (!resp.ok && resp.status !== 402) {
+      const t = await resp.text().catch(() => "");
+      console.warn("Primary model failed, falling back:", resp.status, t.slice(0, 200));
+      resp = await call("google/gemini-3.5-flash", false);
+    }
 
     if (!resp.ok) {
       const status = resp.status;
@@ -86,7 +106,9 @@ serve(async (req) => {
     const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
     if (!args) throw new Error("No tool call returned");
     const parsed = JSON.parse(args);
-    return new Response(JSON.stringify(parsed), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const bodyStr = JSON.stringify(parsed);
+    cache.set(key, { at: Date.now(), body: bodyStr });
+    return new Response(bodyStr, { headers: { ...corsHeaders, "Content-Type": "application/json", "X-Cache": "MISS" } });
   } catch (e) {
     console.error("generate-questions error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });

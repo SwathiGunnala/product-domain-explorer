@@ -3,17 +3,47 @@ import { getIcon } from "@/lib/iconMap";
 import { CATEGORY_STYLES } from "@/lib/categoryStyles";
 import type { DomainDef } from "@/data/domains";
 import { cn } from "@/lib/utils";
+import { storage } from "@/lib/storage";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props { domain: DomainDef; size?: "md" | "sm" }
+
+// Fire-and-forget warm: prefetch the DomainPage chunk + kick the edge cache.
+// Guarded per-slug so hover storms don't spam the gateway.
+const warmed = new Set<string>();
+let hoverTimer: number | undefined;
+
+function warm(domain: DomainDef) {
+  if (warmed.has(domain.slug)) return;
+  warmed.add(domain.slug);
+  // Prefetch route chunk.
+  import("@/pages/DomainPage").catch(() => {});
+  // Skip generation if we already have it cached client-side.
+  if (storage.getDomain(domain.slug)) return;
+  // Fire the edge function so its 24h in-memory cache warms up.
+  supabase.functions.invoke("generate-domain", { body: { domain: domain.name } })
+    .then(({ data }) => { if (data && !(data as any).error) storage.setDomain(domain.slug, data); })
+    .catch(() => { warmed.delete(domain.slug); });
+}
 
 export const DomainTile = ({ domain, size = "md" }: Props) => {
   const Icon = getIcon(domain.icon);
   const s = CATEGORY_STYLES[domain.category];
   const isSm = size === "sm";
 
+  const onEnter = () => {
+    window.clearTimeout(hoverTimer);
+    hoverTimer = window.setTimeout(() => warm(domain), 120);
+  };
+  const onLeave = () => window.clearTimeout(hoverTimer);
+
   return (
     <Link
       to={`/domain/${domain.slug}`}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      onFocus={onEnter}
+      onTouchStart={onEnter}
       className={cn(
         "group relative flex flex-col items-start justify-between overflow-hidden rounded-2xl border bg-card shadow-tile transition-smooth",
         "hover:-translate-y-1 hover:shadow-tile-hover",
