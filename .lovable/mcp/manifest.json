@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "sdk_version": "0.24.0",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "domain-explorer-mcp",
+      "version": "0.1.0",
+      "title": "Domain Explorer"
+    },
+    "tools": [
+      {
+        "name": "list_domains",
+        "title": "List domains",
+        "description": "List every curated industry domain available in Domain Explorer, optionally filtered by category.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "category": {
+              "description": "Optional category filter.",
+              "type": "string",
+              "enum": [
+                "finance",
+                "mobility",
+                "health",
+                "tech",
+                "commerce",
+                "play",
+                "real"
+              ]
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "explain_domain",
+        "title": "Explain a domain",
+        "description": "Generate a structured visual explainer for an industry/domain: overview, terminology, users, jobs-to-be-done, process, architecture, opportunities, and notable products.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "domain": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Domain name, e.g. 'Payments', 'Healthcare', 'Robotics'."
+            }
+          },
+          "required": [
+            "domain"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "deep_dive_product",
+        "title": "Deep-dive on a product",
+        "description": "Generate a structured product deep-dive: vision, customer segments, revenue streams, and what's next (past/now/next, threats & opportunities).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "product": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Product name, e.g. 'Stripe', 'Zocdoc'."
+            },
+            "company": {
+              "description": "Company name if different from product.",
+              "type": "string"
+            },
+            "domain": {
+              "description": "Industry domain the product belongs to.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "product"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "pm_interview_questions",
+        "title": "PM interview questions",
+        "description": "Generate Product Manager interview questions tailored to a specific domain, grouped by topic (product sense, users, strategy, metrics, design, estimation).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "domain": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Domain name, e.g. 'Payments'."
+            },
+            "products": {
+              "description": "Optional notable products in the domain.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "domain"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
