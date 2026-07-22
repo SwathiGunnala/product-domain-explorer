@@ -1,6 +1,6 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { DOMAINS, CATEGORIES } from "@/data/domains";
+import { DOMAINS, CATEGORIES } from "../../../data/domains";
 
 export default defineTool({
   name: "list_domains",
