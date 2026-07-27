@@ -6,10 +6,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Bump when the schema or prompt changes so stale cached content is regenerated.
+export const CONTENT_VERSION = 3;
+
 // In-memory cache (per edge-instance). 24h TTL. Warm hits return in <100ms.
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const cache = new Map<string, { at: number; body: string }>();
-const cacheKey = (domain: string) => domain.trim().toLowerCase();
+const cacheKey = (domain: string) => `v${CONTENT_VERSION}:${domain.trim().toLowerCase()}`;
+
 
 const tool = {
   type: "function",
