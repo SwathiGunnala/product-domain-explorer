@@ -243,10 +243,11 @@ STRICT WORD LIMITS (hard caps, no exceptions):
 - architecture.flow: 6-10 ordered steps representing one complete end-to-end interaction. Steps must reference real node ids. Use kind="return" for response/settlement/reporting steps that flow back.
 - opportunity.title: max 5 words; opportunity.description: max 12 words
 - playbook item title: max 5 words; detail: max 12 words; watchout: max 10 words
-
 - product.tagline: max 10 words
 No filler, no marketing fluff, no full sentences where a phrase works. Use real product/company names.
-Counts: exactly 4 stats; 4-6 terminology groups (2-6 terms each); 4-8 users (side ∈ supply|demand|enabler|regulator); 4-6 jobs; 4-7 process steps; 3-4 architecture layers (2-4 nodes); 6-10 flow steps; 4-6 opportunities (impact & feasibility 1-5); 6-8 products (category ∈ Incumbent|Challenger|Infrastructure|Niche).`;
+playbook = what a product leader must internalize for THIS domain: ux = interaction/design patterns that make or break adoption; gtm = how products in this domain actually reach and monetize buyers (channels, motions, pricing, partnerships); challenges = regulatory, technical, trust, unit-economics or org traps. Be domain-specific, never generic advice.
+Counts: exactly 4 stats; 4-6 terminology groups (2-6 terms each); 4-8 users (side ∈ supply|demand|enabler|regulator); 4-6 jobs; 4-7 process steps; 3-4 architecture layers (2-4 nodes); 6-10 flow steps; 4-6 opportunities (impact & feasibility 1-5); playbook.ux/gtm/challenges 3-4 items each; 6-8 products (category ∈ Incumbent|Challenger|Infrastructure|Niche).`;
+
 
 async function callGateway(domain: string, apiKey: string, model: string, priority: boolean) {
   const body: Record<string, unknown> = {
