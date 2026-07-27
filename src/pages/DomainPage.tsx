@@ -180,17 +180,17 @@ const DomainPage = () => {
         {data && (
           <>
             <SectionCard id="overview" icon={<BookOpen className="h-4 w-4" />} title="Overview" subtitle={data.overview?.summary}>
-              <StatTiles stats={data.overview.stats} category={category} />
+              <StatTiles stats={data.overview?.stats || []} category={category} />
               <LensNotes slug={slug} lens="overview" placeholder="Why does this domain matter? What surprised you?" />
             </SectionCard>
 
             <SectionCard id="terminology" icon={<Tags className="h-4 w-4" />} title="Terminology" subtitle="Key vocabulary">
-              <TermChipGrid groups={data.terminology} category={category} />
+              <TermChipGrid groups={data.terminology || []} category={category} />
               <LensNotes slug={slug} lens="terminology" placeholder="Terms to memorize, jargon that confused you, mental models…" />
             </SectionCard>
 
             <SectionCard id="users" icon={<Users className="h-4 w-4" />} title="Users" subtitle="Who's involved">
-              <PersonaGrid personas={data.users} />
+              <PersonaGrid personas={data.users || []} />
               <FlagPicker
                 slug={slug}
                 kind="users"
@@ -201,7 +201,7 @@ const DomainPage = () => {
             </SectionCard>
 
             <SectionCard id="jobs" icon={<Target className="h-4 w-4" />} title="Jobs to be Done" subtitle="Pain → Gain">
-              <JtbdCardList jobs={data.jobs} />
+              <JtbdCardList jobs={data.jobs || []} />
               <FlagPicker
                 slug={slug}
                 kind="jobs"
@@ -212,7 +212,7 @@ const DomainPage = () => {
             </SectionCard>
 
             <SectionCard id="process" icon={<Workflow className="h-4 w-4" />} title="Process" subtitle="Start to finish">
-              <ProcessStepper steps={data.process} category={category} />
+              <ProcessStepper steps={data.process || []} category={category} />
               <FlagPicker
                 slug={slug}
                 kind="process"
@@ -224,9 +224,9 @@ const DomainPage = () => {
 
             <SectionCard id="architecture" icon={<Network className="h-4 w-4" />} title="Architecture" subtitle="Step-by-step interaction flow">
               <ArchitectureDiagram
-                layers={data.architecture.layers}
-                flow={(data.architecture as any).flow}
-                edges={(data.architecture as any).edges}
+                layers={(data.architecture as any)?.layers || []}
+                flow={(data.architecture as any)?.flow}
+                edges={(data.architecture as any)?.edges}
               />
               <FlagPicker
                 slug={slug}
@@ -240,7 +240,7 @@ const DomainPage = () => {
             </SectionCard>
 
             <SectionCard id="opportunities" icon={<Lightbulb className="h-4 w-4" />} title="Opportunities" subtitle="Impact × Feasibility">
-              <OpportunityMatrix items={data.opportunities} />
+              <OpportunityMatrix items={data.opportunities || []} />
               <FlagPicker
                 slug={slug}
                 kind="opportunities"
@@ -267,7 +267,7 @@ const DomainPage = () => {
 
             <SectionCard id="products" icon={<Package className="h-4 w-4" />} title="Notable Products" subtitle="Tap for deep-dive">
               <ProductGrid
-                products={data.products}
+                products={data.products || []}
                 onSelect={(p) => navigate(`/domain/${slug}/product/${encodeURIComponent(p.name)}?company=${encodeURIComponent(p.company)}`)}
               />
               <FlagPicker
