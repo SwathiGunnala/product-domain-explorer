@@ -319,7 +319,10 @@ serve(async (req) => {
     const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
     if (!args) throw new Error("No tool call returned");
     const parsed = JSON.parse(args);
+    parsed.generatedAt = new Date().toISOString();
+    parsed.contentVersion = CONTENT_VERSION;
     const bodyStr = JSON.stringify(parsed);
+
     cache.set(key, { at: Date.now(), body: bodyStr });
     return new Response(bodyStr, { headers: { ...corsHeaders, "Content-Type": "application/json", "X-Cache": "MISS" } });
   } catch (e) {
