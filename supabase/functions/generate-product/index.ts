@@ -89,7 +89,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const key = `${(product || "").toLowerCase()}|${(company || "").toLowerCase()}|${(domain || "").toLowerCase()}`;
+    const key = `v2:${(product || "").toLowerCase()}|${(company || "").toLowerCase()}|${(domain || "").toLowerCase()}`;
     const hit = cache.get(key);
     if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
       return new Response(hit.body, { headers: { ...corsHeaders, "Content-Type": "application/json", "X-Cache": "HIT" } });
