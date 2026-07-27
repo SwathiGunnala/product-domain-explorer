@@ -11,8 +11,9 @@ const KEY_NOTES_INDEX = "de:notes-index";
 const KEY_FLAGS_INDEX = "de:flags-index";
 const KEY_WARMED_DOMAINS = "de:warmed-domains";
 
-export type LensKey = "overview" | "terminology" | "users" | "jobs" | "process" | "architecture" | "opportunities" | "products";
-export type FlagKind = "users" | "jobs" | "opportunities" | "products" | "architecture" | "process";
+export type LensKey = "overview" | "terminology" | "users" | "jobs" | "process" | "architecture" | "opportunities" | "products" | "playbook";
+export type FlagKind = "users" | "jobs" | "opportunities" | "products" | "architecture" | "process" | "playbook";
+
 
 export interface FlagEntry {
   id: string;       // stable, e.g. `${kind}:${normLabel}`

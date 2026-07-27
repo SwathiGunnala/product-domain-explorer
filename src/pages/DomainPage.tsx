@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, BookOpen, Tags, Users, Target, Workflow, Network, Lightbulb, Package, RefreshCw, Bookmark, Brain, ChevronRight } from "lucide-react";
+import { ArrowLeft, BookOpen, Tags, Users, Target, Workflow, Network, Lightbulb, Package, RefreshCw, Bookmark, Brain, ChevronRight, Compass } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SectionCard } from "@/components/SectionCard";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,8 @@ import { ProcessStepper } from "@/components/visuals/ProcessStepper";
 import { ArchitectureDiagram } from "@/components/visuals/ArchitectureDiagram";
 import { OpportunityMatrix } from "@/components/visuals/OpportunityMatrix";
 import { ProductGrid } from "@/components/visuals/ProductGrid";
+import { PlaybookBoard } from "@/components/visuals/PlaybookBoard";
+
 import { LensNotes } from "@/components/LensNotes";
 import { FlagPicker } from "@/components/FlagPicker";
 import { cn } from "@/lib/utils";
@@ -93,8 +95,10 @@ const DomainPage = () => {
     { id: "process", title: "End-to-end Process", subtitle: "How it flows from start to finish", icon: <Workflow className="h-4 w-4" /> },
     { id: "architecture", title: "Architecture", subtitle: "Components and how they communicate", icon: <Network className="h-4 w-4" /> },
     { id: "opportunities", title: "Opportunities", subtitle: "Where the gaps are", icon: <Lightbulb className="h-4 w-4" /> },
+    { id: "playbook", title: "PM Playbook", subtitle: "UX, GTM & challenges", icon: <Compass className="h-4 w-4" /> },
     { id: "products", title: "Notable Products", subtitle: "Click any product for a deep-dive", icon: <Package className="h-4 w-4" /> },
   ], []);
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -227,6 +231,21 @@ const DomainPage = () => {
               <LensNotes slug={slug} lens="opportunities" placeholder="Your top 3 bets — and what would have to be true?" />
             </SectionCard>
 
+            <SectionCard id="playbook" icon={<Compass className="h-4 w-4" />} title="Product Leader Playbook" subtitle="UX · GTM · Challenges">
+              <PlaybookBoard data={data.playbook || {}} />
+              <FlagPicker
+                slug={slug}
+                kind="playbook"
+                items={[
+                  ...((data.playbook?.ux || []).map((i: any) => ({ label: i.title, sub: `UX · ${i.detail}` }))),
+                  ...((data.playbook?.gtm || []).map((i: any) => ({ label: i.title, sub: `GTM · ${i.detail}` }))),
+                  ...((data.playbook?.challenges || []).map((i: any) => ({ label: i.title, sub: `Risk · ${i.detail}` }))),
+                ]}
+                emptyHint="Flag the patterns and risks you want to carry into your roadmap."
+              />
+              <LensNotes slug={slug} lens="playbook" placeholder="What would you do differently as the PM here?" />
+            </SectionCard>
+
             <SectionCard id="products" icon={<Package className="h-4 w-4" />} title="Notable Products" subtitle="Tap for deep-dive">
               <ProductGrid
                 products={data.products}
@@ -240,6 +259,7 @@ const DomainPage = () => {
               />
               <LensNotes slug={slug} lens="products" placeholder="Who's winning and why? What's the wedge?" />
             </SectionCard>
+
 
             {/* Interview prompt */}
             <div className="relative overflow-hidden rounded-2xl border bg-gradient-hero p-6 text-primary-foreground shadow-tile">
