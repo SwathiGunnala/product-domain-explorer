@@ -130,7 +130,16 @@ const DomainPage = () => {
                 <p className="mt-1 max-w-xl text-balance text-sm text-muted-foreground md:text-base">
                   {data?.tagline || known?.tagline || "Generating a visual explainer…"}
                 </p>
+                {data?.generatedAt && (
+                  <p className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
+                    {loading
+                      ? "Refreshing with the latest data…"
+                      : `Data current as of ${new Date(data.generatedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}`}
+                  </p>
+                )}
               </div>
+
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={toggleSave}>
