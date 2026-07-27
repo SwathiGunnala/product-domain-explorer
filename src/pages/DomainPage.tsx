@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, BookOpen, Tags, Users, Target, Workflow, Network, Lightbulb, Package, RefreshCw, Bookmark, Brain, ChevronRight } from "lucide-react";
+import { ArrowLeft, BookOpen, Tags, Users, Target, Workflow, Network, Lightbulb, Package, RefreshCw, Bookmark, Brain, ChevronRight, Compass } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SectionCard } from "@/components/SectionCard";
 import { Button } from "@/components/ui/button";
