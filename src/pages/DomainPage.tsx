@@ -227,6 +227,21 @@ const DomainPage = () => {
               <LensNotes slug={slug} lens="opportunities" placeholder="Your top 3 bets — and what would have to be true?" />
             </SectionCard>
 
+            <SectionCard id="playbook" icon={<Compass className="h-4 w-4" />} title="Product Leader Playbook" subtitle="UX · GTM · Challenges">
+              <PlaybookBoard data={data.playbook || {}} />
+              <FlagPicker
+                slug={slug}
+                kind="playbook"
+                items={[
+                  ...((data.playbook?.ux || []).map((i: any) => ({ label: i.title, sub: `UX · ${i.detail}` }))),
+                  ...((data.playbook?.gtm || []).map((i: any) => ({ label: i.title, sub: `GTM · ${i.detail}` }))),
+                  ...((data.playbook?.challenges || []).map((i: any) => ({ label: i.title, sub: `Risk · ${i.detail}` }))),
+                ]}
+                emptyHint="Flag the patterns and risks you want to carry into your roadmap."
+              />
+              <LensNotes slug={slug} lens="playbook" placeholder="What would you do differently as the PM here?" />
+            </SectionCard>
+
             <SectionCard id="products" icon={<Package className="h-4 w-4" />} title="Notable Products" subtitle="Tap for deep-dive">
               <ProductGrid
                 products={data.products}
@@ -240,6 +255,7 @@ const DomainPage = () => {
               />
               <LensNotes slug={slug} lens="products" placeholder="Who's winning and why? What's the wedge?" />
             </SectionCard>
+
 
             {/* Interview prompt */}
             <div className="relative overflow-hidden rounded-2xl border bg-gradient-hero p-6 text-primary-foreground shadow-tile">
