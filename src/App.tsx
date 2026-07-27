@@ -12,6 +12,8 @@ const InterviewPage = lazy(() => import("./pages/InterviewPage.tsx"));
 const LibraryPage = lazy(() => import("./pages/LibraryPage.tsx"));
 const InterviewPrepPage = lazy(() => import("./pages/InterviewPrepPage.tsx"));
 const ComparePage = lazy(() => import("./pages/ComparePage.tsx"));
+const LoginPage = lazy(() => import("./pages/LoginPage.tsx"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent.tsx"));
 
 const RouteFallback = () => <div className="min-h-screen bg-background" />;
 
@@ -29,6 +31,8 @@ const App = () => (
           <Route path="/library" element={<LibraryPage />} />
           <Route path="/interview-prep" element={<InterviewPrepPage />} />
           <Route path="/compare" element={<ComparePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
