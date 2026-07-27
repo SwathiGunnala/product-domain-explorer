@@ -3,7 +3,7 @@
 // supabase function: mcp
 // Bundled from src/lib/mcp/index.ts by @lovable.dev/mcp-js.
 // src/lib/mcp/index.ts
-import { defineMcp } from "npm:@lovable.dev/mcp-js@0.24.0";
+import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.24.0";
 
 // src/lib/mcp/tools/list-domains.ts
 import { defineTool } from "npm:@lovable.dev/mcp-js@0.24.0";
@@ -181,11 +181,16 @@ var pm_interview_questions_default = defineTool4({
 });
 
 // src/lib/mcp/index.ts
+var projectRef = "hxgejillsubbhennozqk";
 var mcp_default = defineMcp({
   name: "domain-explorer-mcp",
   title: "Domain Explorer",
   version: "0.1.0",
   instructions: "Tools for exploring industries the way a Product Manager would. Use `list_domains` to see what's available, `explain_domain` for a visual-first breakdown (users, JTBD, process, architecture, opportunities, products), `deep_dive_product` for a specific product's vision/segments/revenue/what's-next, and `pm_interview_questions` for domain-tailored PM interview prep.",
+  auth: auth.oauth.issuer({
+    issuer: `https://${projectRef}.supabase.co/auth/v1`,
+    acceptedAudiences: "authenticated"
+  }),
   tools: [list_domains_default, explain_domain_default, deep_dive_product_default, pm_interview_questions_default]
 });
 
