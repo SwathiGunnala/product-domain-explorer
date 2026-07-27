@@ -180,7 +180,7 @@ const DomainPage = () => {
         {data && (
           <>
             <SectionCard id="overview" icon={<BookOpen className="h-4 w-4" />} title="Overview" subtitle={data.overview?.summary}>
-              <StatTiles stats={data.overview.stats} category={category} />
+              <StatTiles stats={data.overview?.stats || []} category={category} />
               <LensNotes slug={slug} lens="overview" placeholder="Why does this domain matter? What surprised you?" />
             </SectionCard>
 
