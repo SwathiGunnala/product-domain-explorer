@@ -6,10 +6,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Bump when the schema or prompt changes so stale cached content is regenerated.
+export const CONTENT_VERSION = 3;
+
 // In-memory cache (per edge-instance). 24h TTL. Warm hits return in <100ms.
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const cache = new Map<string, { at: number; body: string }>();
-const cacheKey = (domain: string) => domain.trim().toLowerCase();
+const cacheKey = (domain: string) => `v${CONTENT_VERSION}:${domain.trim().toLowerCase()}`;
+
 
 const tool = {
   type: "function",
@@ -227,6 +231,15 @@ const tool = {
 
 const SYSTEM_PROMPT = `You are an expert industry analyst. Produce VISUAL-FIRST explainers — extremely terse copy, every field is scannable.
 
+ACCURACY RULES (CRITICAL):
+- Reflect the CURRENT state of the industry as of the date given in the user message. Prefer the most recent verified reality over older textbook descriptions.
+- Only name companies/products that exist TODAY under that name. Never list defunct, acquired-and-retired, or renamed entities (use the current name, e.g. the post-rebrand name).
+- Every stat must be a real, publicly reported figure. Prefix estimates with "~" and include the year in the value or hint (e.g. "~$2.1T (2025)"). Never fabricate precise-looking numbers.
+- Terminology, process steps and architecture must match how the domain actually operates now, including recent regulatory or technology shifts.
+- If you are not confident a number or a name is correct, use a qualitative value instead of guessing.
+
+
+
 ICON RULES (CRITICAL): Every "icon" field MUST be a valid Lucide React icon name in PascalCase (e.g. "CreditCard", "Wallet", "ShieldCheck", "Users", "Building2", "Truck", "Stethoscope", "Banknote", "Globe", "Lock", "Server", "Database", "Cpu", "Smartphone", "Store", "Factory", "Plane", "Car", "BarChart3", "Sparkles", "Zap", "Target", "Workflow", "Network", "Package", "FileText", "Mail", "MessageSquare", "Search", "Settings", "AlertTriangle", "TrendingUp", "DollarSign", "ShoppingCart", "Bot", "Brain", "Cloud", "Layers", "GitBranch", "Plug", "Key", "Eye", "HeartPulse"). NEVER use emojis. NEVER use kebab-case. NEVER invent names. Pick a real Lucide icon that semantically fits the entity. Each user/persona, job, process step, architecture node, opportunity, and product MUST have a meaningful, distinct Lucide icon.
 
 STRICT WORD LIMITS (hard caps, no exceptions):
@@ -254,7 +267,7 @@ async function callGateway(domain: string, apiKey: string, model: string, priori
     model,
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: `Generate a complete visual explainer for the "${domain}" domain. Be specific to this domain, not generic. Use real product/company names where appropriate.` },
+      { role: "user", content: `Today's date is ${new Date().toISOString().slice(0, 10)}. Generate a complete visual explainer for the "${domain}" domain, reflecting how it works and who leads it as of today. Be specific to this domain, not generic. Use real, currently-operating product/company names and recent, sourced figures with their year.` },
     ],
     tools: [tool],
     tool_choice: { type: "function", function: { name: "describe_domain" } },
@@ -306,7 +319,10 @@ serve(async (req) => {
     const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
     if (!args) throw new Error("No tool call returned");
     const parsed = JSON.parse(args);
+    parsed.generatedAt = new Date().toISOString();
+    parsed.contentVersion = CONTENT_VERSION;
     const bodyStr = JSON.stringify(parsed);
+
     cache.set(key, { at: Date.now(), body: bodyStr });
     return new Response(bodyStr, { headers: { ...corsHeaders, "Content-Type": "application/json", "X-Cache": "MISS" } });
   } catch (e) {

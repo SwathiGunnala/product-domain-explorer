@@ -42,14 +42,24 @@ const DomainPage = () => {
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  const CONTENT_VERSION = 3;
+  const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+  const isStale = (d: any) =>
+    !d ||
+    d.contentVersion !== CONTENT_VERSION ||
+    !d.generatedAt ||
+    Date.now() - new Date(d.generatedAt).getTime() > MAX_AGE_MS;
+
   useEffect(() => {
     const cached = storage.getDomain(slug);
     setData(cached);
     setSaved(storage.getSavedDomains().includes(slug));
     storage.pushRecent(slug);
     if (!cached) generate();
+    else if (isStale(cached)) generate(true); // refresh outdated content in place
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
+
 
   const generate = async (force = false) => {
     if (loading) return;
@@ -120,7 +130,16 @@ const DomainPage = () => {
                 <p className="mt-1 max-w-xl text-balance text-sm text-muted-foreground md:text-base">
                   {data?.tagline || known?.tagline || "Generating a visual explainer…"}
                 </p>
+                {data?.generatedAt && (
+                  <p className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
+                    {loading
+                      ? "Refreshing with the latest data…"
+                      : `Data current as of ${new Date(data.generatedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}`}
+                  </p>
+                )}
               </div>
+
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={toggleSave}>

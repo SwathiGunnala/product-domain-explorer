@@ -89,7 +89,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const key = `${(product || "").toLowerCase()}|${(company || "").toLowerCase()}|${(domain || "").toLowerCase()}`;
+    const key = `v2:${(product || "").toLowerCase()}|${(company || "").toLowerCase()}|${(domain || "").toLowerCase()}`;
     const hit = cache.get(key);
     if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
       return new Response(hit.body, { headers: { ...corsHeaders, "Content-Type": "application/json", "X-Cache": "HIT" } });
@@ -99,16 +99,25 @@ serve(async (req) => {
       const b: Record<string, unknown> = {
         model,
         messages: [
-          { role: "system", content: `You are a product strategist. Produce VISUAL-FIRST deep-dives — terse copy only, every field is scannable. STRICT WORD LIMITS (hard caps):
+          { role: "system", content: `You are a product strategist. Produce VISUAL-FIRST deep-dives — terse copy only, every field is scannable.
+
+ACCURACY RULES (CRITICAL):
+- Describe the product as it exists TODAY (see date in the user message): current owner/company, current name, current pricing and positioning. Never describe a discontinued or renamed version as if current.
+- Every figure must be a real, publicly reported number with its year (e.g. "~$10B ARR (2025)"). Prefix estimates with "~". Never fabricate precise-looking numbers.
+- "whatsNext.now" and "next" must reflect recently announced or shipped direction, not speculation presented as fact.
+- If unsure of a number or fact, use a qualitative description instead of guessing.
+
+STRICT WORD LIMITS (hard caps):
 - vision.statement: max 15 words
 - vision.why: max 12 words
 - segment.name: max 4 words; segment.need: max 8 words
-- revenue.scale: max 8 words (e.g. "$10B annual (2024)")
+- revenue.scale: max 8 words (e.g. "~$10B annual (2025)")
 - stream.name: max 3 words; stream.description: max 8 words
 - whatsNext.past / now / next: max 12 words each
 - threats / opportunities items: max 8 words each
-No filler, no marketing fluff. Use rough public estimates; flag with "~" if approximate. Shares should sum to ~100.` },
-          { role: "user", content: `Deep-dive on the product "${product}"${company ? ` by ${company}` : ""}${domain ? ` in the ${domain} domain` : ""}. Be specific.` },
+No filler, no marketing fluff. Shares should sum to ~100.` },
+          { role: "user", content: `Today's date is ${new Date().toISOString().slice(0, 10)}. Deep-dive on the product "${product}"${company ? ` by ${company}` : ""}${domain ? ` in the ${domain} domain` : ""}, reflecting its current state as of today. Be specific and factual.` },
+
         ],
         tools: [tool],
         tool_choice: { type: "function", function: { name: "describe_product" } },
@@ -143,7 +152,9 @@ No filler, no marketing fluff. Use rough public estimates; flag with "~" if appr
     const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
     if (!args) throw new Error("No tool call returned");
     const parsed = JSON.parse(args);
+    parsed.generatedAt = new Date().toISOString();
     const bodyStr = JSON.stringify(parsed);
+
     cache.set(key, { at: Date.now(), body: bodyStr });
     return new Response(bodyStr, { headers: { ...corsHeaders, "Content-Type": "application/json", "X-Cache": "MISS" } });
   } catch (e) {

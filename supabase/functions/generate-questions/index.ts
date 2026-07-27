@@ -61,7 +61,7 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     const productList = Array.isArray(products) && products.length ? `Notable products in this domain: ${products.join(", ")}.` : "";
-    const key = (domain || "").toLowerCase();
+    const key = `v2:${(domain || "").toLowerCase()}`;
     const hit = cache.get(key);
     if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
       return new Response(hit.body, { headers: { ...corsHeaders, "Content-Type": "application/json", "X-Cache": "HIT" } });
@@ -71,8 +71,9 @@ serve(async (req) => {
       const b: Record<string, unknown> = {
         model,
         messages: [
-          { role: "system", content: "You generate realistic Product Manager interview questions. Tailor them tightly to the domain. Mix difficulties. Reference real products where useful." },
-          { role: "user", content: `Generate PM interview questions for the "${domain}" domain. ${productList}` },
+          { role: "system", content: "You generate realistic Product Manager interview questions. Tailor them tightly to the domain. Mix difficulties. Reference only real, currently-operating products and companies under their current names, and reflect the industry's present-day dynamics, regulation and technology. Never reference defunct or renamed products as if current." },
+          { role: "user", content: `Today's date is ${new Date().toISOString().slice(0, 10)}. Generate PM interview questions for the "${domain}" domain, grounded in how it works today. ${productList}` },
+
         ],
         tools: [tool],
         tool_choice: { type: "function", function: { name: "generate_questions" } },
