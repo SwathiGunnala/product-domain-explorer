@@ -95,8 +95,10 @@ const DomainPage = () => {
     { id: "process", title: "End-to-end Process", subtitle: "How it flows from start to finish", icon: <Workflow className="h-4 w-4" /> },
     { id: "architecture", title: "Architecture", subtitle: "Components and how they communicate", icon: <Network className="h-4 w-4" /> },
     { id: "opportunities", title: "Opportunities", subtitle: "Where the gaps are", icon: <Lightbulb className="h-4 w-4" /> },
+    { id: "playbook", title: "PM Playbook", subtitle: "UX, GTM & challenges", icon: <Compass className="h-4 w-4" /> },
     { id: "products", title: "Notable Products", subtitle: "Click any product for a deep-dive", icon: <Package className="h-4 w-4" /> },
   ], []);
+
 
   return (
     <div className="min-h-screen bg-background">
