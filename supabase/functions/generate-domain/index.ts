@@ -158,6 +158,52 @@ const tool = {
             required: ["title", "description", "impact", "feasibility", "icon"],
           },
         },
+        playbook: {
+          type: "object",
+          description: "Common patterns a product leader should think about in this domain.",
+          properties: {
+            ux: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  detail: { type: "string" },
+                  watchout: { type: "string" },
+                  icon: { type: "string" },
+                },
+                required: ["title", "detail", "watchout", "icon"],
+              },
+            },
+            gtm: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  detail: { type: "string" },
+                  watchout: { type: "string" },
+                  icon: { type: "string" },
+                },
+                required: ["title", "detail", "watchout", "icon"],
+              },
+            },
+            challenges: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  detail: { type: "string" },
+                  watchout: { type: "string" },
+                  icon: { type: "string" },
+                },
+                required: ["title", "detail", "watchout", "icon"],
+              },
+            },
+          },
+          required: ["ux", "gtm", "challenges"],
+        },
         products: {
           type: "array",
           items: {
@@ -173,8 +219,9 @@ const tool = {
           },
         },
       },
-      required: ["tagline", "overview", "terminology", "users", "jobs", "process", "architecture", "opportunities", "products"],
+      required: ["tagline", "overview", "terminology", "users", "jobs", "process", "architecture", "opportunities", "playbook", "products"],
     },
+
   },
 };
 
