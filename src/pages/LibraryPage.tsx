@@ -18,6 +18,7 @@ const LENS_LABELS: Record<LensKey, string> = {
   architecture: "Architecture",
   opportunities: "Opportunities",
   products: "Products",
+  playbook: "Playbook",
 };
 
 const KIND_LABELS: Record<FlagEntry["kind"], string> = {
@@ -27,6 +28,8 @@ const KIND_LABELS: Record<FlagEntry["kind"], string> = {
   architecture: "Architecture",
   opportunities: "Opportunities",
   products: "Products",
+  playbook: "Playbook",
+
 };
 
 interface DomainNotebook {
