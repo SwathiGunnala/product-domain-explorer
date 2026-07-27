@@ -61,7 +61,7 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     const productList = Array.isArray(products) && products.length ? `Notable products in this domain: ${products.join(", ")}.` : "";
-    const key = (domain || "").toLowerCase();
+    const key = `v2:${(domain || "").toLowerCase()}`;
     const hit = cache.get(key);
     if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
       return new Response(hit.body, { headers: { ...corsHeaders, "Content-Type": "application/json", "X-Cache": "HIT" } });
