@@ -263,7 +263,7 @@ async function callGateway(domain: string, apiKey: string, model: string, priori
     model,
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: `Generate a complete visual explainer for the "${domain}" domain. Be specific to this domain, not generic. Use real product/company names where appropriate.` },
+      { role: "user", content: `Today's date is ${new Date().toISOString().slice(0, 10)}. Generate a complete visual explainer for the "${domain}" domain, reflecting how it works and who leads it as of today. Be specific to this domain, not generic. Use real, currently-operating product/company names and recent, sourced figures with their year.` },
     ],
     tools: [tool],
     tool_choice: { type: "function", function: { name: "describe_domain" } },
