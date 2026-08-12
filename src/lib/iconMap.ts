@@ -58,6 +58,9 @@ export function getIcon(hint?: string | null): LucideIcon {
   const cleaned = stripEmoji(hint);
   const seed = (cleaned || hint).toLowerCase();
 
+  // Exact lucide name match first (e.g. "CreditCard", "TrainFront")
+  if (cleaned && Icons[cleaned]) return Icons[cleaned];
+
   // Try direct PascalCase match
   if (cleaned) {
     const normalized = cleaned
