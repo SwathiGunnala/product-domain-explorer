@@ -1,57 +1,29 @@
+# Add curated tiles for the missing domains
 
-## Goal
-Cut perceived page-load latency to near-zero while keeping generation quality high and cost sane. Focus is the domain-generation call (dominant wait) plus a small frontend perf pass.
+Expand the domain catalog from 36 to ~70 curated tiles so the gaps I listed become one-click selectable options, with icons, taglines, and category colors like the existing ones.
 
-## Model strategy (cost + quality + speed)
+## New domains by category
 
-Replace `google/gemini-2.5-flash` (prior gen, non-priority, ~6-15s non-streamed) with a two-tier setup:
+**Finance & Money** — Lending & BNPL, Accounting & Tax, Payroll & HR Tech, Capital Markets, RegTech & Compliance, Merchant Solutions
 
-- **Primary generator: `openai/gpt-5.4-mini` with `service_tier: "priority"`** (Fast mode ✓). Current-gen, strong for structured JSON via tool calling, priority tier gives lower latency, cheaper than `gpt-5.5`. Best quality/cost/speed balance for our tool-call schema.
-- **Warm-preview generator (optional micro-call): `openai/gpt-5.4-nano`** for a fast tagline+overview so the page paints content in ~1s while the full payload streams.
-- Fallback if a call errors: `google/gemini-3.5-flash` (current-gen, cheap).
+**Mobility & Travel** — Travel Booking, Maritime & Shipping, Space, Public Transit
 
-Rationale (verified against `ai-models-chat`): `gpt-5.4-mini` is current-gen, priority-eligible, and materially faster than `gpt-5.5` at a fraction of the cost while still handling our tool schema cleanly. `gpt-5.5` is overkill for a structured extraction job.
+**Health & Life** — Elder Care, Childcare, Health Insurance Tech (payers), Medical Devices
 
-## Latency plan
+**Tech & Industry** — Telecom, Semiconductors, Data Platforms, MarTech & AdTech, CRM & Sales Tech, Customer Support, ERP, Procurement & Supply Chain
 
-### 1. Stream generation end-to-end
-- Edge function: switch to `stream: true`, forward the SSE chunks to the browser.
-- Client: read the stream, incrementally parse the tool-call `arguments` JSON as it arrives (tolerant partial-JSON parser), and render each section (`tagline`, `overview`, `terminology`, …) the moment its branch is complete.
-- Result: first meaningful paint in ~600-900ms instead of 6-15s; full page fills progressively.
+**Commerce & Consumer** — Marketplaces, Subscription Boxes, Beauty, Pets, Home Services
 
-### 2. Priority serving tier
-- Add `service_tier: "priority"` on every chat completion (only on ✓ models — verified for `gpt-5.4-mini`, `gpt-5.4`, `gpt-5.5`). Do NOT set it on nano.
+**Learn & Play** — Sports, Music, Creator Economy, Dating, Ticketing & Events
 
-### 3. Prefetch + hover-warm
-- On `DomainTile` hover/focus for >120ms, fire `generate-domain` in the background and prefetch the `DomainPage` route chunk. Click then hits a warm cache.
-- Cache generation results in the edge function itself (in-memory Map keyed by lowercased domain name, TTL 24h) so a second visitor to "healthcare" gets sub-second response — no extra infra.
+**Real-world** — Government & GovTech, Legal Tech, Defense & Aerospace, Climate Tech, Mining & Materials, Water & Waste, Recruiting & Job Marketplaces, Non-profit
 
-### 4. Frontend perf pass (small, high ROI)
-- `index.html`: trim Google Fonts to only the 2 weights used above the fold, add `font-display=swap`, add `<link rel="preconnect">` to the Supabase functions origin.
-- `iconMap.ts`: split — a small "core" set imported by `Index`/tiles, a lazy `iconMap.extended.ts` imported only by `DomainPage`.
-- Purge unused deps (`recharts` if unused, unused Radix packages) after an `rg` audit.
-- Route-prefetch on tile hover.
+All of these slot into the seven existing categories, so the color system, filters, compare view, and MCP category filter keep working unchanged.
 
-### 5. Skeleton → progressive
-- Replace the current all-or-nothing skeleton with per-section skeletons that resolve as their stream branch lands, so the UI feels alive throughout.
+## Technical notes
 
-## Files to change
-
-- `supabase/functions/generate-domain/index.ts` — swap model to `openai/gpt-5.4-mini`, add `service_tier: "priority"`, enable streaming, add in-memory cache with 24h TTL, fallback path.
-- `supabase/functions/generate-product/index.ts`, `supabase/functions/generate-questions/index.ts` — same model + priority (no streaming needed for questions unless we want; streaming is cheap).
-- `src/pages/DomainPage.tsx` — consume the stream via `fetch` on the function URL (not `functions.invoke`, which buffers), incrementally parse, render sections as they arrive.
-- `src/components/DomainTile.tsx` — hover-warm handler (prefetch chunk + fire-and-forget generation).
-- `src/lib/iconMap.ts` → split into `iconMap.core.ts` + `iconMap.extended.ts`.
-- `index.html` — font trim, preconnect.
-- `package.json` — remove unused deps (after audit).
-
-## Non-goals
-No UI redesign, no schema changes, no auth, no persistence changes. Same JSON shape returned.
-
-## Expected outcome
-- Cold page paint: ~0.8-1.2s to first visible content (tagline + overview), full page in 3-5s.
-- Warm (hover-preloaded) page: near-instant.
-- Cached (2nd visitor): <500ms.
-- Cost: lower than today — `gpt-5.4-mini` is materially cheaper than `gpt-5.5`, and edge caching removes repeat generations.
-
-Approve and I'll implement in this order: (1) model swap + priority + streaming edge, (2) client streaming render, (3) hover-warm + cache, (4) frontend perf pass.
+- Single edit to `src/data/domains.ts`: append the new `DomainDef` entries with unique slugs, short taglines (max ~5 words), and existing category keys.
+- Icons: each new tile uses a Lucide icon name already registered in `src/lib/iconMap.ts` (e.g. `HandCoins`, `Calculator`, `Briefcase`, `LineChart`, `Scale`, `Store`, `Ship`, `Rocket`, `Phone`, `Cpu`, `Database`, `Target`, `Users`, `MessageSquare`, `Package`, `Warehouse`, `Heart`, `Trophy`, `PlayCircle`, `Gavel`, `Globe`, `Wrench`). If a better-fitting icon isn't registered yet, add it to the import + `Icons` map in `iconMap.ts`.
+- Content for each new tile is generated on demand by the existing `generate-domain` function — no schema, edge-function, or database change needed.
+- `src/lib/mcp/tools/list-domains.ts` picks up the new entries automatically; the MCP function gets rebundled and redeployed so agents see the full list.
+- Homepage grid and search already render from `DOMAINS`, so no page changes; I'll verify the grid still reads well at the larger count and keep category sections scannable.
