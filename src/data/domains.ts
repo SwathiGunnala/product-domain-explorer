@@ -74,6 +74,60 @@ export const DOMAINS: DomainDef[] = [
   { slug: "agriculture", name: "Agriculture", tagline: "Farms & food supply", icon: "Wheat", category: "real" },
   { slug: "manufacturing", name: "Manufacturing", tagline: "Factories & supply", icon: "Factory", category: "real" },
   { slug: "construction", name: "Construction", tagline: "Building the world", icon: "HardHat", category: "real" },
+
+  // Finance (expanded)
+  { slug: "lending-bnpl", name: "Lending & BNPL", tagline: "Credit at checkout", icon: "HandCoins", category: "finance" },
+  { slug: "accounting-tax", name: "Accounting & Tax", tagline: "Books, filings & compliance", icon: "Calculator", category: "finance" },
+  { slug: "payroll-hr-tech", name: "Payroll & HR Tech", tagline: "Pay, benefits & people ops", icon: "Briefcase", category: "finance" },
+  { slug: "capital-markets", name: "Capital Markets", tagline: "Trading & market infrastructure", icon: "LineChart", category: "finance" },
+  { slug: "regtech-compliance", name: "RegTech & Compliance", tagline: "KYC, AML & reporting", icon: "Scale", category: "finance" },
+  { slug: "merchant-solutions", name: "Merchant Solutions", tagline: "Acquiring & POS", icon: "Store", category: "finance" },
+
+  // Mobility (expanded)
+  { slug: "travel-booking", name: "Travel Booking", tagline: "OTAs & trip planning", icon: "Compass", category: "mobility" },
+  { slug: "maritime-shipping", name: "Maritime & Shipping", tagline: "Ports & ocean freight", icon: "Ship", category: "mobility" },
+  { slug: "space", name: "Space", tagline: "Launch, satellites & orbit", icon: "Satellite", category: "mobility" },
+  { slug: "public-transit", name: "Public Transit", tagline: "Rail, bus & fares", icon: "TrainFront", category: "mobility" },
+
+  // Health (expanded)
+  { slug: "elder-care", name: "Elder Care", tagline: "Aging & long-term care", icon: "Heart", category: "health" },
+  { slug: "childcare", name: "Childcare", tagline: "Daycare & family support", icon: "Baby", category: "health" },
+  { slug: "health-insurance-tech", name: "Health Insurance Tech", tagline: "Payers, claims & benefits", icon: "ShieldCheck", category: "health" },
+  { slug: "medical-devices", name: "Medical Devices", tagline: "Diagnostics & equipment", icon: "Stethoscope", category: "health" },
+
+  // Tech (expanded)
+  { slug: "telecom", name: "Telecom", tagline: "Networks & connectivity", icon: "Phone", category: "tech" },
+  { slug: "semiconductors", name: "Semiconductors", tagline: "Chips, fabs & design", icon: "Cpu", category: "tech" },
+  { slug: "data-platforms", name: "Data Platforms", tagline: "Pipelines, lakes & BI", icon: "Database", category: "tech" },
+  { slug: "martech-adtech", name: "MarTech & AdTech", tagline: "Ads, campaigns & attribution", icon: "Megaphone", category: "tech" },
+  { slug: "crm-sales-tech", name: "CRM & Sales Tech", tagline: "Pipeline & revenue teams", icon: "Target", category: "tech" },
+  { slug: "customer-support", name: "Customer Support", tagline: "Tickets, chat & deflection", icon: "MessageSquare", category: "tech" },
+  { slug: "erp", name: "ERP", tagline: "Core business systems", icon: "Layers", category: "tech" },
+  { slug: "procurement-supply-chain", name: "Procurement & Supply Chain", tagline: "Sourcing & fulfilment software", icon: "Warehouse", category: "tech" },
+
+  // Commerce (expanded)
+  { slug: "marketplaces", name: "Marketplaces", tagline: "Two-sided liquidity", icon: "Waypoints", category: "commerce" },
+  { slug: "subscription-boxes", name: "Subscription Boxes", tagline: "Recurring physical goods", icon: "Package", category: "commerce" },
+  { slug: "beauty", name: "Beauty", tagline: "Cosmetics & personal care", icon: "Gem", category: "commerce" },
+  { slug: "pets", name: "Pets", tagline: "Food, vets & care", icon: "PawPrint", category: "commerce" },
+  { slug: "home-services", name: "Home Services", tagline: "Repairs & on-demand pros", icon: "Wrench", category: "commerce" },
+
+  // Learn & Play (expanded)
+  { slug: "sports", name: "Sports", tagline: "Leagues, fans & betting", icon: "Trophy", category: "play" },
+  { slug: "music", name: "Music", tagline: "Artists, labels & streams", icon: "Music", category: "play" },
+  { slug: "creator-economy", name: "Creator Economy", tagline: "Creators & monetization", icon: "Sparkles", category: "play" },
+  { slug: "dating", name: "Dating", tagline: "Matching & relationships", icon: "Heart", category: "play" },
+  { slug: "ticketing-events", name: "Ticketing & Events", tagline: "Live events & access", icon: "Ticket", category: "play" },
+
+  // Real-world (expanded)
+  { slug: "govtech", name: "Government & GovTech", tagline: "Public services & digital ID", icon: "Landmark", category: "real" },
+  { slug: "legal-tech", name: "Legal Tech", tagline: "Contracts, courts & counsel", icon: "Gavel", category: "real" },
+  { slug: "defense-aerospace", name: "Defense & Aerospace", tagline: "Programs & national security", icon: "Shield", category: "real" },
+  { slug: "climate-tech", name: "Climate Tech", tagline: "Decarbonization & credits", icon: "Leaf", category: "real" },
+  { slug: "mining-materials", name: "Mining & Materials", tagline: "Extraction & raw inputs", icon: "Hexagon", category: "real" },
+  { slug: "water-waste", name: "Water & Waste", tagline: "Utilities & recycling", icon: "Recycle", category: "real" },
+  { slug: "recruiting-jobs", name: "Recruiting & Jobs", tagline: "Hiring & job marketplaces", icon: "Handshake", category: "real" },
+  { slug: "non-profit", name: "Non-profit", tagline: "Donors, programs & impact", icon: "Globe", category: "real" },
 ];
 
 export const getDomainBySlug = (slug: string) => DOMAINS.find(d => d.slug === slug);
