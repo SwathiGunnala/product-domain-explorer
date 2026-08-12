@@ -1,4 +1,5 @@
 import {
+  Baby, Handshake, Leaf, Megaphone, Music, PawPrint, Recycle, Satellite, Ticket, TrainFront,
   AlertOctagon, AlertTriangle, Apple, ArrowRight, Banknote, BarChart3, BedDouble, Bell, BellRing, Bike, Bitcoin,
   Blocks, BookCopy, BookOpen, Bot, Box, Brain, Briefcase, Building, Building2, Calculator, Calendar, Car,
   CheckCircle2, CheckSquare, ChefHat, CircleMinus, CirclePlus, ClipboardList, Clock, Cloud, Code, Code2, Coffee,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 
 const Icons: Record<string, LucideIcon> = {
+  Baby, Handshake, Leaf, Megaphone, Music, PawPrint, Recycle, Satellite, Ticket, TrainFront,
   AlertOctagon, AlertTriangle, Apple, ArrowRight, Banknote, BarChart3, BedDouble, Bell, BellRing, Bike, Bitcoin,
   Blocks, BookCopy, BookOpen, Bot, Box, Brain, Briefcase, Building, Building2, Calculator, Calendar, Car,
   CheckCircle2, CheckSquare, ChefHat, CircleMinus, CirclePlus, ClipboardList, Clock, Cloud, Code, Code2, Coffee,
